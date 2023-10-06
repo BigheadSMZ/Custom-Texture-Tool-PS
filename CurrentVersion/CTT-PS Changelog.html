@@ -1,0 +1,1806 @@
+<html>
+  <style type="text/css">
+    a         { text-decoration: none }
+    a:link    { color: 00AAFF; }
+    a:visited { color: 0099FF; }
+    a:hover   { color: 00CCFF; }
+    a:active  { color: 00CCFF; }
+    body, header, h1 {
+      font-size: large;
+      font-family: Arial, sans-serif;
+      background-color: 2A2A2A;
+      margin: 0;
+      border: 0 none transparent;
+      color: white;
+      line-height: 28px; /* 4px +12px + 4px */
+    }
+    div { padding: 0.5em; }
+    hr {
+      border: inherit;
+      background-color: white;
+      height: 3px;
+      width: 100%;
+    }
+    header, h1 {
+      display: initial;
+      padding-left: 0.5em;
+      color: FF8888;
+      font-weight: bold;
+    }
+    h1 { color: FFAA00; }
+    
+  </style>
+  <head>
+    <title>Custom Texture Tool PS Changelog</title>
+  </head>
+  <body>
+    <div>
+    <hr>
+    <header>Custom Texture Tool PS - Changelog</header><br>
+    <header>Created By:</header> Bighead<br>
+    <header>Latest Version: </header><a href="https://forums.dolphin-emu.org/Thread-custom-texture-tool-ps-v50-0">Dolphin Forum Thread</a>
+
+    <hr><h1>v51.0</h1><hr>
+
+      <header>Performance Improvements:</header><br>
+      <b>&#8226;</b> This script has had an enormous bottleneck since the inception of the GUI. The texture list was created using a "ListView"
+        item, which is the grid that shows the texture name, dimensions, aspect, status, and so on. What I failed to realize is that a
+        ListView is EXTREMELY slow to update and add entries to. So I tried to implement a "DataGridView" instead, and the performance is
+        lightyears beyond what it was. Expect massive speed improvements overall to every single operation that updated the texture list.<br>
+      <b>•</b> Counting textures when pressing the [Start] button is now done asynchronously from the script's main thread. This allows the
+        "Master Loop" to start before the count is finished, so the GUI does not freeze up for a few seconds before the loop even
+        starts. Before the count is finished, the total textures and progress percentage will display as (??). When the count is
+        finished, both are updated accordingly during the loop. This can save the user a lot of time over the long run.<br>
+      <b>•</b> A huge oversight was fixed that could lead to an enormous bottleneck when working with thousands of textures. The problem was with
+        the way external mipmaps were checked for and counted. If many textures (thousands) were in the same folder, the script would
+        frequently hang-up every loop iteration. A new method has been created that is infinitely faster (literally).<br><br>
+
+      <header>General Changes:</header><br>
+      <b>•</b> Add a new <b>CTT-PS Mode</b> to the list called <b>Database Mode</b>. This is similar to "Dolphin Mode" but for textures that
+        do not have the "tex1" prefix followed by their original dimensions. The purpose of this mode is to create and utilize databases
+        that store texture names and dimensions. It requires building a database file using the original dumps (more on that below).
+        When running any operation in this mode, textures that are found in the database will have their original dimensions referenced.<br>
+      <b>•</b> Add a new operation called <b>Create Texture Size Database</b> that will scan textures and store their name and dimensions into 
+        a database file using the extension <b>".tdb"</b>. This operation should only be ran on dumped textures that contain their
+        original dimensions. When working with HD versions of these textures while in <b>Database Mode</b>, the current database will 
+        be referenced to find the original dimensions of these textures, which allows calculating things such as the "scale" and 
+        "aspect". It will also allow running these textures through operations and options that usually only work with "Dolphin" 
+        textures.<br>
+      <b>•</b> Reimplement Venomalia's <b>Dolphin TextureExtraction Tool</b>. The operation is now called <b>Extract Textures With 
+        TextureExtraction Tool</b>. Auto-scrolling the texture list is disabled during this operation because of how the two programs
+        interact with each other. I have recently discovered that scrolling the list is extremely slow, so CTT-PS can fall behind
+        the extraction tool. Additional functionality has also been added to CTT-PS to allow further configuration.<br>
+      <b>•</b> Support the "combined RGBA" format that TextureExtraction Tool can create. The texture output from the tool will use the
+        prefix "RGBA_" instead of "tex1_". When CTT-PS encounters these textures, it will automatically split them into the two textures
+        that make it up and process them with the selected operation. This currently requires the script to be linked to Venomalia's
+        tool, but I plan on implementing a fallback path before v51.0 leaves beta.<br>
+      <b>•</b> Modify how <b>Scan Dolphin Textures For Issues</b> reports issues. There has been a long-standing bug where only a single 
+        issue was reported even if the texture had multiple issues. The new system will report the number of issues, correctly
+        display the issues in the message column, and report if the texture was copied or fixed (if enabled).<br>
+      <b>•</b> Added an option to <b>Scan Dolphin Textures For Issues</b> to allow defining user acceptable scaling values. When searching
+        textures for issues, textures that have scaling values outside of the ones the user listed will be flagged as an "issue".<br>
+      <b>•</b> The texture list now has a new option <b>Store Texture List Adjustments</b>. This option saves any changes to the texture
+        list dimensions and/or column sizes and reloads them whenever restarting the script. To restore the original texture list sizes,
+        simply uncheck the option and restart the script or use the "Restore Defaults" button in the Options menu.<br>
+      <b>•</b> The dialog menu shown when selecting folders such as the Input/Output folders has been replaced with its much more modern
+        variant that is similar to the file selection dialog menu. Special thanks to <b>Jill</b> for reminding me of this issue.<br>
+      <b>•</b> Add a button to <b>Split Combined Multi-Texture</b> to clear a CTT file loaded from memory. Before v49.0, loading a CTT file
+        would keep the texture names loaded into memory even after loading a new texture afterwards. This behavior has been restored,
+        so to clear the names from memory the button has been added.<br>
+      <b>•</b> Remove the <b>Debug</b> option <b>Disable counting textures when launching operations</b> as it is no longer needed with the 
+        addition of asynchronous counting. This option only existed to serve as a bypass to the long time it can take counting textures 
+        for very large packs, so it no longer serves any purpose.</br>
+      <b>•</b> Checking textures for transparency in any pixels (not the same as checking for alpha channel) is now done solely with ImageMagick 
+        which is much faster than the previous method. There are very few cases where this check is used, but in the rare cases it pops up it will 
+        no longer freeze up the GUI and it will complete much faster than before.<br>
+      <b>•</b> Reduce the number of situations where PNG images are resized before being sent to Compressonator which saves time. Because 
+        Compressonator does not have the ability to resize dimensions, the image is first sent to ImageMagick to be resized. This was true 
+        even if the dimensions were not a multiple of four, and Compressonator will automatically scale dimensions up 1-3 pixels to the 
+        nearest multiple of four. For example, 63x63 are not valid DDS dimensions but Compressonator will still create a 64x64 image. So instead
+        of resizing these images with ImageMagick before sending to Compressonator they are sent "as is" which can prevent unnecessary resizes.<br>
+      <b>•</b> Alert the user that a path can not contain the tilde character when attempting to set the <b>Input Path</b> with this character.<br><br>
+
+
+      <header>Bug Fixes:</header><br>
+      <b>•</b> Fix the script deleting files/folders. I used an alternate method that doesn't work in Windows 11 so I reverted this change.<br>
+      <b>•</b> Fix in Split Combined Multi-Texture updating the texture name when dropping a texture onto the "Select Texture" button.<br>
+      <b>•</b> Fix several GUI elements that had issues in higher monitor DPI settings (Windows scaling > 100%).<br>
+      <b>•</b> Fix the missing (albeit rather useless) tooltip on the "Exit" button of the texture list.<br>
+
+    <hr><h1>v50.4</h1><hr>
+
+      <b>•</b> Fixed an issue with TexConv losing color data from fully transparent pixels.
+
+    <hr><h1>v50.3</h1><hr>
+
+      <b>•</b> Fixed textures not being created with TexConv due to a wrong command I added.
+
+    <hr><h1>v50.2</h1><hr>
+      <b>•</b> Added a new operation <b>Convert Dolphin Textures From Extracted Disc</b> which can be found in <b>Dolphin Mode</b>. This
+        operation requires the <b>Dolphin TextureExtraction Tool</b> by <b>Venomalia</b>. This program can extract textures from
+        extracted disc files and convert them to PNG with the Dolphin hash-naming format. The tool can be found by following 
+        <a href="https://forums.dolphin-emu.org/Thread-textureextraction-tool-v0-8-2-0"><b>this link.</b></a><br>
+      <b>•</b> Expert Mode operation <b>Run Custom CLI Executable With CTT-PS</b> can now use input extension <b>".*"</b> without quotes
+        (period asterisk) to indicate that the extension is a wildcard. This matches all file extensions to run with the program.
+      <b>•</b> When format is set to icon (ICO) when converting images, the <b>Icon Size</b> textbox will now reset to default values 
+        (16,24,32,48,64,128,256) when left blank or invalid values are used. Also added a button to reset the textbox values.<br>
+      <b>•</b> Implement a workaround when modifying the "Rescale Factor". It will now increment from "0.01" to "1.00" instead of "1.01" 
+        when increasing it via the numeric up/down. Since the factor can't be "0", the value of "0.01" is as low as it can get. This 
+        is not a value that should be used, but since this is the lowest possible value, its easy to obtain by scrolling/clicking the 
+        numeric up/down, which would then require the user to manually edit out the "0.01" to a desired value.<br>
+      <b>•</b> Add a PNG option to enable preserving color data in fully transparent pixels. This used to be the default behavior since
+        v47.0, but it was discovered by <b>GhostlyDark</b> that it can cause weird artifacts in some textures. The corruption was
+        most noticeable on some single color (white) text textures, where some pixels were not getting 100% white for some reason.<br>
+      <b>•</b> Add partial support for DDS formats A1R5G5B5 and A4R4G4D4. The script can not create them (at least not yet), but they can
+        be converted to other formats such as PNG. I do not know if I will add support in creating them, maybe if there is some demand.<br>
+        
+    <hr><h1>v50.1</h1><hr>
+      <b>•</b> Fix the missing [...] button to select textures when using the Metroid Prime font replacement operation.<br>
+      <b>•</b> Fix waifu2x <b>Noise Reduction</b> to be disabled on boot if <b>Scale & Auto-Denoise</b> is set as the conversion mode.<br>
+      <b>•</b> Modify the default ESRGAN option states <b>Preserve Alpha Channel</b> and <b>Upscale Images in Segments</b> to unchecked
+        when pressing the <b>Restore Defaults</b> button. These should be "opt-in" options and not enabled by default.<br>
+      <b>•</b> Fix <b>Restore Defaults</b> to enable the sharpening option in <b>Create/Rescale/Resize</b> textures operations. Sharpening is
+        preferable in most cases since it affects mipmap and rescale quality. There are few circumstances it is a detriment.<br>
+      <b>•</b> Fix <b>Restore Defaults</b> to not enable the <b>PC Automatic Shutdown</b> option as a default state.<br>
+      <b>•</b> The CTT-PS Changelog is now written in a HTML document (obviously, you are reading it now!).<br>
+
+    <hr><h1>v50.0</h1><hr>
+      <b>•</b> Detect Windows 11 operating system. This was tricky as the build number still reports the version as "10.0.X".<br>
+      <b>•</b> The script is finally "DPIAware" which means that DPI can be changed without logging out/in Windows. This also fixed
+        some issues when centering dialog windows and the PowerShell window, and simplified some of the code. I do suggest
+        closing the script between changing the Windows DPI settings however, as this may cause some funky scaling issues.<br>
+      <b>•</b> Add an option to the [Miscellaneous] tab on the Options menu to shut down the PC when any operation is completed.<br>
+      <b>•</b> Disable the option [Run PowerShell scripts with a Double Click] on Windows 11. The registry entry for PS scripts was
+        removed so it is no longer possible to apply this hack. Adding the registry entry manually does not work either.<br>
+      <b>•</b> Added other file types to the texture count when applicable: (.bmp), (.tga), (.tif), (.tiff), and (.ico).<br>
+      <b>•</b> Added an option to [Create Materials With Material Map Generator] to generate straight to material maps.<br>
+      <b>•</b> Added a brief description for [Metroid Prime] mode in the CTT-PS Mode tooltip (I thought I did this already...).<br>
+      <b>•</b> A launcher now comes with the script named [Custom Texture Tool PS Launcher]. This simply launches the first CTT-PS
+        script that is found in the same folder. This was created since Windows 11 removed the ability to launch PowerShell
+        scripts with a double click. <b>Note:</b> Older ReadMe files said this was a PS script converted to EXE, but I scrapped
+        that idea and went with a launcher written in C#. Reason being everything detected the previous launcher as a virus.<br>
+      <b>•</b> Partial support for converting "WebP" images to other formats. CTT-PS can not create WebP images (at least not yet).<br>
+      <b>•</b> Python v3.9.x is now the only versions that this script supports when using operations that require Python. Python
+        v3.10.x is not supported as several modules do not work with it yet. Earlier versions are no longer supported due
+        to the complexity it adds trying to support modules like "LZ4" where the latest version is broken on Windows.<br>
+      <b>•</b> Imported a new method for file enumeration that is really fast, and rewrote the texture counting code. This vastly
+        speeds up counting textures before the loop starts. In my tests, the speed increase is nearly 38x faster!<br>
+      <b>•</b> The new method for file enumeration is now also used in various other places: getting files for the MasterLoop,
+        removing flags from files and folders, when updating the asset XML file in Phyre Mode, and cleaning empty folders.<br>
+      <b>•</b> The Optimizer programs (OptiPNG, OxiPNG, Pingo, and ECT) all have their own path selection boxes on the [Options]
+        menu. They can now be selected with a combobox on the operation [Optimize PNG Textures With Optimizer Program].<br>
+      <b>•</b> Add a check when importing Resource Pack ZIP files when using [Resource Pack Manager]. The root of the ZIP file
+        must contain: "logo.png", "manifest.json", and the folder "textures" or CTT-PS will refuse to import it.<br>
+      <b>•</b> Completely rewrote the code to work with existing and generate new material maps, and updated it all to handle newer
+        versions of Ishiiruka Tool. Hot fixes to Ishiiruka textures are now applied to the header after generation, which
+        allows other image tools to open these textures. Note that BC7 material maps can not be recreated or modified.<br>
+      <b>•</b> Add missing models and conversions modes for Waifu2x. Also expand the dialog to things fit within it better.<br>
+      <b>•</b> Add the ability to convert supported image formats to an icon. The [ICO] format has been added to [Convert Textures
+        to Another Format] while in [Expert Mode]. Icons can contain several images at different sizes, so a new option has
+        been added to specify sizes created. The maximum size an icon can be created is 256x256, anything larger is ignored.<br>
+      <b>•</b> The [Basic Image Viewer] now supports material maps. For some reason I was blocking these before, but with the
+        changes recently added to Ishiiruka Tool by Tino, material maps now work just fine in many image programs.<br>
+      <b>•</b> There has always been a limitation with the [Basic Image Viewer]: the name of the image can only be added once even
+        if the paths are different. That limitation has been removed, multiple images with the same name can now be added.<br>
+      <b>•</b> Add an option to Convert/Rescale/Resize operations to toggle the sharpening filter that is applied to textures when
+        they are resized any reason. This affects all textures that are resized, including generated mipmaps and icons. It
+        used to be always enabled by default, with no option to disable it, but decided it should be an "opt-in" option.<br><br>
+
+      <header>Bug Fixes:</header><br>
+      <b>•</b> Fix [Process Selected] when changing the output path with the button. When not selecting a path, the default text
+        that shows on the textbox (add with button or drag and drop) was appearing on the button instead of the textbox.<br>
+      <b>•</b> Fix a potential issue where attempting to create DX9 DDS textures without mipmaps could fail.<br>
+      <b>•</b> Fix an issue when applying upscaling filters that did not properly set alpha when creating images with ImageMagick.<br>
+      <b>•</b> Fix [Combine Multiple Textures] so that it can handle a very large number of images (up to 256 tested and works).<br>
+      <b>•</b> Fix [Split Combined Multi-Texture] to split images that were not previously generated with the combine option.<br>
+      <b>•</b> Fix loading a (.ctt) to light up the "Triforce" icon if any options are enabled from settings within the file.<br>
+      <b>•</b> Fix converting icon files into PNG images. Support for this is still very rudimentary and may be expanded later.<br>
+      <b>•</b> Fix Combine Textures [Zelda OoT:Screen Shake] dialog labels and texboxes so they look good in all monitor DPIs.<br>
+      <b>•</b> Fix Phyre Mode operation [Create Phyre Textures From PNG/Phyre] from renaming wrong files in "asset_D3D11.xml".<br>
+      <b>•</b> Fix potential subsequent runs when creating phyre textures by clearing the output path before recreating textures.<br>
+      <b>•</b> Fix copying "asset_D3D11.xml" to new folders when "Copy Non-Textures" is disabled in other parts of the script.<br>
+      <b>•</b> Fix Material Map Generator. The path was assumed to contain the 'generate.py' script (thanks stealthii).<br>
+      <b>•</b> Fix [Calculate Textures VRAM Requirement] when VRAM calculation is above 2GB (needed 64-bit integer).<br>
+      <b>•</b> Fix the Texture List to show "Ishiiruka Tool" when creating DDS textures with materials/material maps.<br>
+      <b>•</b> Fix Flag Removal to merge paths if the destination path already has a folder with the name without the flag.<br>
+      <b>•</b> Fix Flag Removal to remove flags from generated external mipmaps. Code to do this was never implemented (oops).<br>
+      <b>•</b> Fix an issue with the timer where it could start to bug out after running for a long time (usually over an hour).<br>
+      <b>•</b> Fix Flag Removal bug when removing flags from folders that could miss folders that are named with the flag only.<br>
+      <b>•</b> Fix validation to not validate Ishiiruka materials and material maps (these should be skipped and not processed).<br>
+      <b>•</b> Fix code that shared states between the various [Disable GPU] options that were isolated from each other in v47.0.<br>
+      <b>•</b> Fix dozens of tooltips that were missing, had wrong info, bad formatting, or incorrect text.<br>
+
+    <hr><h1>v49.0</h1><hr>
+      <b>•</b> The [DDS Options] section has been modified so that other formats can be configured here (PNG, JPG, etc.) by using
+        the tabs across the top of the groupbox. This is an idea I've had for a long time, but was too lazy to implement.<br>
+      <b>•</b> Imported C# classes for "transparent label" and "advanced rich textbox". The new textbox comes with the ability to
+        use text justification. This was used to replace the labels found around the GUI, mostly for operation descriptions.
+        The transparent label is only used to overlap the textbox so the text can not be clicked on like a normal label.<br>
+      <b>•</b> Removed the "Additional Options" button from the Convert/Rescale/Resize operations and removed the menu completely.<br>
+      <b>•</b> Removed the "Red Light" that appears when configuring "Additional Options" as it no longer makes sense to have.<br>
+      <b>•</b> Added more options for PNG, BMP, and JPG images. These can be found in the new format options section.<br>
+      <b>•</b> Added the ability to convert any image format (PNG, DDS, JPG, TGA, TIFF) into bitmap (BMP).<br>
+      <b>•</b> Added the ability to add screen shake textures when using [Combine Multiple Textures]. These are used in The Legend
+        of Zelda: Ocarina of Time when Link does a roll into the edge of the screen. The menu to add these textures can be
+        found on the combine window by clicking on the "Triforce" button. There are six possible textures to add here.<br>
+      <b>•</b> Zelda: OoT screen shake textures are split from the combined image when using [Split Combined Multi-Texture] if they
+        were added when combining textures. The texture names are stored in the (.ctt) file and are required for splitting.<br>
+      <b>•</b> Added a new option to [Split Combined Multi-Texture] to batch process multiple combined images. This only works if
+        the combined texture has an included (.ctt) file accompanying it in order to pull the necessary properties.<br>
+      <b>•</b> When importing a (.ctt) file into the script, enable pixel overlap or garbage pixel checkboxes if they are defined.<br>
+      <b>•</b> A restart of CTT-PS is no longer required for [Metroid Mode] operation [Create New Metroid Prime 2 Fonts From Base
+        Textures] when toggling "HD Example Preview Images". The pictureboxes are now always updated with the proper images.<br>
+      <b>•</b> Fix the "Start" button from not being disabled when running certain operations.<br>
+      <b>•</b> Fix splitting combined textures that have different dimensions for the final texture than the previous textures. It
+        is hard to explain without an example. OoT has textures that are 1x15 textures (world map), where each texture has
+        dimensions of 216x12, but the final texture is 216x4. Before splitting treated each as 216x9 giving bad dimensions.<br>
+
+    <hr><h1>v48.0</h1><hr>
+      <b>•</b> Fix a serious issue which caused Compressonator to always fail. This means v47.0 was never using Compressonator and
+        instead falling back to TexConv. The problem was with some of the new options "EncodeWith" and "DecodeWith". Both of
+        the options were being added to the command line when converting to DDS, causing the image to fail. The EncodeWith
+        option should only have been added when converting DDS BC7 to PNG textures. All issues surrounding this are fixed.<br>
+      <b>•</b> Add better tooltip descriptions to Compressonator "Compression/Decompression" options which use the above commands.<br>
+      <b>•</b> Add an option to adjust the quality of JPG images on the "Additional Options" menu found on Convert/Rescale/Resize.<br>
+      <b>•</b> Add buttons to the [Custom CLI Executable] commands list to remove selected commands and remove all commands.<br>
+      <b>•</b> Show the PowerShell console when checking dependencies for material map generator. This way the user can see what
+        is going on, or rather what is being downloaded and added than just doing it in the background.<br>
+      <b>•</b> Fix the description of [Edge Pixels] in the material map generator operation.<br>
+
+    <hr><h1>v47.0</h1><hr>
+      <header>GUI Changes:</header><br>
+      <b>•</b> Support High-DPI (above 100% scaling) in Windows 10 Scaling and layout settings. Before the GUI would be upscaled
+        with a bilinear filter. Auto-scaling was disabled and I have created my own method of DPI scaling that works well.<br>
+      <b>•</b> Add a [Configure Tool] button to the DDS Options section to configure options for the currently selected DDS Tool
+        that can tweak texture output. They can also be shown from the [Options] window under the [Miscellaneous] tab.<br>
+      <b>•</b> TexConv, Waifu2x, and ESRGAN/SFTGAN now each have their own personal variables to store whether or not GPU decoding
+        is enabled or disabled. This means that toggling the setting for one program no longer toggles it for all of them.
+        As a result, the [Disable GPU] setting was removed from the Convert/Rescale [Additional Options] window.<br>
+      <b>•</b> Change Process Selected [!] button into a [$] and create [Exit Without Saving] button which now uses the [!]. This
+        button can be enabled on [Debug] tab using [Show a [!] button near "Exit" that closes without saving].<br>
+      <b>•</b> Redesign the [Preferences] tab in Options. Options have been split between [CTT-PS Behavior] and [GUI Elements].<br>
+      <b>•</b> Renamed [Internal TIFF are Not Mipmaps] back to the old name [Do Not Resize TIFF Layers] as I think it explains
+        what it does a bit better. It can still be confusing since TIFF still uses like (_mip1, _mip2) for layers so I
+        may have to revisit this eventually. Or not, I doubt most people use this script to create TIFF images anyway.<br>
+      <b>•</b> Add a warning message that pops up in an "OK" window that alerts the user to use [Expert Mode] when attempting
+        to add textures to the [Process Selected] dialog that are not Dolphin ("tex1_") textures when the CTT-PS mode is
+        set to [Dolphin Mode]. This warning only pops up once per session so it is not spammed if several textures are
+        dropped onto the window at a time. This warning will only show again when the script is closed and reopened.<br>
+      <b>•</b> Allow showing/hiding the triforce button on the Combine and Split operation windows with a right click. Just so
+        it's not forgotten later, this isn't saved to the script/settings file, so it only lasts for the current session.<br><br>
+
+      <header>Functional Changes:</header><br>
+      <b>•</b> The script now saves options to an external ini file [StoredOptions.ini] by default rather than saving options
+        directly to the script. The old behavior of saving directly the script is still possible by unchecking the option
+        [Store/load saved changes in "CTT-PS Data" folder] found under the Preferences tab of the Options menu.<br>
+      <b>•</b> Custom Texture Tool PS now uses a global [Data] folder that can be selected by the user on first boot, or within
+        the Option menu on the [Tool Paths] screen. This data folder is used to hold the temporary folder, the
+        "StoredOptions.ini" file, a resource pack database, and it can be a place to put the supported programs.<br>
+      <b>•</b> While not new to this version, adding the [Force Create Mipmaps] flag (_mm#) to the end of textures forces
+        generating mipmaps for that texture, the # defines the number of mipmaps created. It is now possible to leave
+        the # portion blank and just use (_mm) to force generating the maximum number of mipmaps for that texture.<br>
+      <b>•</b> Show the [Force Create Mipmaps] option when in Dolphin Mode. It appears that textures that are not mipmap textures
+        dumped by Dolphin ("m" in the filename) work with mipmaps. Not suggested to use this option with entire packs as
+        it is a waste of hard drive space to create mipmaps for textures that don't need them (such as UI textures).<br>
+      <b>•</b> Add a wildcard (*) to xBRZ [ScalerTest*.exe] to allow newer versions that are named [ScalerTest_Windows.exe].<br>
+      <b>•</b> Add a check when pressing [Start] that prevents the master loop from starting if the script is in the same path
+        as the [Tools Master Path], or if the [Input/Output Paths] are set there which prevents an infinite loop. This
+        used to be checked during the loop when validating textures (Special Cases), but has now been removed. If any of
+        the variations of this error is triggered, an error message will pop up explaining which situation caused it.<br>
+      <b>•</b> Remove option [Skip Texture if Output Exists]. A new option has been added to the [Preferences] menu called
+        [Overwrite textures in the output path if they already exist] which does the same thing for all textures.<br>
+      <b>•</b> Change the way the "last path" is remembered when selecting images or programs from the Get-File window. Rather
+        than use a global path for all selections, each has its own unique way of attempting to retrieve this value so
+        multiple "last paths" can exist. If there is no last path, in each case it will default to the scipt location.<br>
+      <b>•</b> The "Process Selected" option has been completely rewritten to be much faster and reliable. Generating image
+        previews is now nearly as fast as not generating them at all, and this rework also allows images from different
+        folders that have the same name to be processed together: before each texture had to have a unique name. This
+        rework was possible due to the changes to the loop, validation, and texture info mentioned below.<br><br>
+
+      <header>Operation Changes:</header><br>
+      <b>•</b> The "Master Loop" (the primary loop each operation runs through), texture validation, and getting texture info
+        (width, height, etc.) are all systems that were heavily intertwined and have been rewritten to be much more
+        efficient and able to operate independent from each other. While this should not have any noticeable changes
+        other than a slight speed increase (and may have created some new bugs), many workarounds were able to be removed.<br>
+      <b>•</b> Add new operation [Create Materials With Material Map Generator]. This uses the python script by JoeyBallentine
+        to generate the materials used by Ishiiruka Dolphin. Requires Python v3, other dependencies can be checked for and
+        downloaded automatically if missing by pressing the "Check Dependencies" button found in the operation's options.<br>
+      <b>•</b> Add new operation [Run Custom CLI Executable With CTT-PS] that allows importing any executable that supports
+        command line input. Imported programs can be customized to accept certain file extensions, a list of commands
+        can be created to send to the program, and the program will process files through the CTT-PS Master Loop.<br>
+      <b>•</b> Rework how the divisor is calculated when splitting images into segments to upscale via ESRGAN/SFTGAN. The new
+        method improves the accuracy for seamless textures that do not have dimensions that are a power of two, but do have
+        dimensions that are even. Images that have odd dimensions (like 155x155), may still have some inconsistencies.<br>
+      <b>•</b> New operation name: [Optimize PNG Textures with Optimizer Program]. Two more programs are now supported. The list
+        of supported programs is now: OptiPNG, OxiPNG, Pingo, and Efficient Compression Tool. Several more options have
+        been added to the GUI; some options are only available depending on which program is currently selected.<br>
+      <b>•</b> The top-left selection window used in the auto-arrange feature for Mario64/Zelda64 tile textures found in
+        the [Combine Textures] operation will now default to the folder that the textures were dropped from.<br>
+      <b>•</b> Add a new operation called [Seperate/Combine Texture RGBA Channels]. This allows splitting a texture into images
+        that contain only the individual channel data, and it allows combining images using individual channel data.<br>
+      <b>•</b> Metroid Prime: A new mode! This contains operations specific to Metroid Prime 2 (for now at least).<br>
+      <b>•</b> Metroid Prime: Add operation to Metroid Prime Mode that allows cloning base textures using the sorted fonts.<br>
+      <b>•</b> Phyre Mode: Add python scripts by CeruleanSky to extract PKG/PKA files in Trails of Cold Steel III and IV.<br>
+      <b>•</b> Phyre Mode: Add operation to extract PKA files, and updated PKG extract operation to support CS3/CS4.<br>
+      <b>•</b> Phyre Mode: In the operation [Create Phyre Textures] allow force converting DXT1 textures with alpha to DXT5.<br><br>
+
+      <header>Misc Changes:</header><br>
+      <b>•</b> Added a "Debug" option to skip counting textures. This is useful to prevent the hang that can occur when starting
+        any operation. Do note that this will also disable the progress bar as it relies on the total count to calculate.<br>
+      <b>•</b> Dozens of little tweaks to line things up across the GUI so it scales as well as it can with higher DPI settings.<br>
+      <b>•</b> Update the built-in "Help" documentation to include all the new changes, operations, and features.<br>
+      <b>•</b> Preserve logos in [Resource Pack Manager] so they are only generated once per formatting selection.<br>
+      <b>•</b> Modified Resource Pack Manager [Description] textbox/panel to simulate the appearance of other 2D textboxes.<br>
+      <b>•</b> Adjust the PowerShell console window buffer/screen size to 100 characters wide and 20k lines long. I used to use
+        similar settings long ago before the PS console was hidden by default, but removed that code in a rewrite.<br>
+      <b>•</b> Increased limit on Split/Combine textures for "Grid Array" to 120. Also added debug option to increase it further.<br><br>
+
+      <header>Bug Fixes:</header><br>
+      <b>•</b> Fix Start, Cancel, and Auto-Scroll buttons/option to not be displaced/missing if resizing the Texture List, switch
+        to Docked mode, then switch back to Window mode. This bug has existed since Docked mode was added to this script.<br>
+      <b>•</b> Fix broken DDS images when forcing DX10 header and the output texture doesn't match the user selected format. This
+        especially affected ImageMagick as it can create BC1 (DXT1) images when the user set the output as BC3 (DXT5).<br>
+      <b>•</b> Fix [Disable GPU] when using Waifu2x-Caffe. The command used was wrong and the texture was not created.<br>
+      <b>•</b> Fix not adding files to the total count when a file name contains a tilde. Before only the path was checked.<br>
+      <b>•</b> Fix an issue when selecting ESRGAN that sometimes didn't actually change the filter to ESRGAN.<br>
+      <b>•</b> Fix the "Max Segment Size" used in ESRGAN/SFTGAN to use the base max dimensions instead of always assuming 32 for
+        the "Pixel Buffer Width". This also fixes when checking the texture's dimensions to see if it falls below the max
+        segment size, as the buffer width is added to the max segment size before calculating the number of pixels.<br>
+      <b>•</b> Fix centering the Texture List "Waiting for the current program to close.." label on initialization.<br>
+      <b>•</b> Fix pixel color data being lost from fully transparent pixels when creating PNG images that can cause issues.<br>
+      <b>•</b> Fix infinite loop with Combine Textures auto-arrange top-left selection if selecting a texture not in the stack.<br>
+      <b>•</b> Fix Phyre Mode option [Create Phyre Tetures] to not reverse the red and blue channels for DDS RGBA.<br>
+      <b>•</b> Fix textures flipping in operations that shouldn't be affected by the [Flip Resulting PNG Texture] option.<br>
+      <b>•</b> Fix [Unhandled Exception] error with the [Process Selected] menu when using [Disable Generating Previews].<br>
+      <b>•</b> Fix DXT1/BC1 textures to allow using 1-bit alpha when using Compressonator to generate them.<br>
+      <b>•</b> Fix the DDS option [Search Flags] to not keep the underscore from the flag when renaming the textures.<br>
+      <b>•</b> Fix [Split Combined Multi-Texture] to clear the temporary folder between runs which caused errors.<br>
+      <b>•</b> Fix weird issue with generating watermark preview. Cancelling the operation caused future previews to fail.<br>
+      <b>•</b> Fix removing the trailing semicolon in the [Message] section when scanning textures that have issues.<br>
+      <b>•</b> Fix an error that could briefly pop up when first loading the script when checking for Python.<br>
+      <b>•</b> Fix [Process Selected] button from flickering when changing operations that support or do not support it.<br>
+      <b>•</b> Fix dialog state [flicker] when adding textures to [Process Selected] and [Basic Image Viewer].<br>
+      <b>•</b> Fix the "Start" buttons to not become enabled when ImageMagick is not added to the script in certain situations.<br>
+      <b>•</b> Fix the logic that centers the PowerShell console on launch so that it works across all DPI settings.<br>
+
+    <hr><h1>v46.2</h1><hr>
+      <b>•</b> Make [PNG Alpha Pixel Manipulation] custom pixel options a bit more robust.<br>
+      <b>•</b> Fix [Process Selected] option (and sub-options) to work with several operations it did not previously work with.<br>
+
+    <hr><h1>v46.1</h1><hr>
+      <b>•</b> Add an option to [PNG Alpha Pixel Manipulation] to customize the color/alpha data of fully transparent pixels.<br>
+      <b>•</b> Fix the tooltip for the [Debug] options. The first half of it was cut off.<br>
+
+    <hr><h1>v46.0</h1><hr>
+      <b>•</b> Add support for creating and processing bitmap BMP images. Only 24-bit and 32-bit bitmaps will most likely work.<br>
+      <b>•</b> When checking [Tools Master Path], search root of all hard disks for [CTT-PS Programs] instead of just [C:\].<br>
+      <b>•</b> Add a weblink icon next to [Tools Master Path] that provides links (3 mirrors) to the programs pack.<br>
+      <b>•</b> Renamed Texture Path to [Input Path]. This felt more fitting since some input files may not be textures.<br>
+      <b>•</b> Added a new operation [Resize Textures with Specific Resolution]. What this does is pretty self explanatory: it
+        forces all images to be created using a specific resolution. This could be useful in niche situations.<br>
+      <b>•</b> When creating DDS, the actual program that was used is now displayed in the [Message] area of the texture list.<br>
+      <b>•</b> Input DDS textures will now transfer the same header type (DX9/DX10) to the output DDS texture unless forced.<br>
+      <b>•</b> Added DDS compression type [Passthrough]. If the input texture is DDS, the output DDS texture will use the same
+        block compression format. If the input texture is anything else, it will use the [DDS Fallback] compression.<br>
+      <b>•</b> DDS texture block compression format can now be forced to BC1 (DXT1). Not suggested for images with transparency!<br>
+      <b>•</b> When in [Expert Mode], allow creating SRGB variants of BC1-BC3 and BC7. BC4-BC6 will instead use [signed] variants.<br>
+      <b>•</b> Rename Old Dimensions to [Dump Dimensions] and New Dimensions to just [Dimensions] on the Texture List window.<br>
+      <b>•</b> Rename Old Aspect to [Dump Aspect] and New Aspect to just [Aspect] on the Texture List window.<br>
+      <b>•</b> Rename the option [Do not Resize TIFF Mipmaps] to [Internal TIFF are Not Mipmaps] since this function has changed.<br>
+      <b>•</b> [Internal TIFF are Not Mipmaps] now scales internal images with the amount of resolution change to the first image.<br>
+      <b>•</b> The mipmap option [External Mipmaps] now also affects TIF/TIFF images. I meant to do this last version, but forgot.<br>
+      <b>•</b> Always remove the mipmap [_mm#] flag if used when creating DDS textures even if [Search Flags] is not enabled.<br>
+      <b>•</b> Do not attempt to flip JPG textures if the option to flip PNG textures is enabled.<br>
+      <b>•</b> PKG Tools used in [Phyre Mode] when extracting or repacking is now ran in a separate thread (prevents GUI hang).<br>
+      <b>•</b> Added an option in [Phyre Mode] in both [Convert/Create] operations to only scan phyre textures or headers.<br>
+      <b>•</b> Add support for bitmap phyre images (.bmp.phyre). These are basically the same as (.png.phyre) with minor differences.<br>
+      <b>•</b> Prevent adding textures to the texture list when creating phyre textures that are missing the header file.<br>
+      <b>•</b> Fix entering an infinite loop that freezes the GUI when processing phyre textures that may end up being unsupported.<br>
+      <b>•</b> Fix issue preventing SFTGAN from working. I am not sure for how long it has been broken.<br>
+      <b>•</b> Fix potential issues when creating DDS textures with the DX10 header which could lead to image corruption.<br>
+      <b>•</b> Fix GUI hanging when running the operation [PNG Alpha Pixel Manipulation] on textures while a texture is processed.<br>
+      <b>•</b> Fix updating the [Status] and [Message] fields on the texture list when a file is copied.<br>
+      <b>•</b> Fix up various small nearly unnoticeable issues (label/checkbox/button spacing, tooltips, etc.).<br>
+
+    <hr><h1>v45.0</h1><hr>
+      <b>•</b> Add support for generating to and from TIF/TIFF and TGA images when in [Expert Mode]. This requires TexConv.<br>
+      <b>•</b> Compressonator is only used when creating DDS textures from PNG images. It is not used for TIF/TIFF and TGA.<br>
+      <b>•</b> Added TIFF and TGA to the exclusions tab. [TIFF] here will exclude both [TIF] and [TIFF] file extensions.<br>
+      <b>•</b> Make TGA and TIF/TIFF images work with the [Basic Image Viewer]. Expert Mode is forced when using the viewer.<br>
+      <b>•</b> Added option [Do not Resize TIFF Mipmaps] to the [Additional Options] button (found in Convert/Rescale operations).
+        This option allows creating multi-layer TIFF images using the full resolution of lower levels, rather than using
+        progressively smaller [mipmap] levels. Lower levels are determined by (_mip1, _mip2, etc). This option also works
+        when converting TIFF to PNG; lower layers will be converted using the full resolution of the [mipmap].<br>
+      <b>•</b> Lots of changes to the texture generation logic. Fixes many minor/rare issues (especially with PNG images).<br>
+      <b>•</b> Allow importing the tool [OxiPNG] instead of [OptiPNG]. OxiPNG is much faster than OptiPNG.<br>
+      <b>•</b> The operation [Extract DDS Interal Mipmaps] is now called [Extract Internal Mipmaps] and works on TIFF images.<br>
+      <b>•</b> ToCS Mode has been renamed to [Phyre Mode], but still contains ToCS specific options. I have tested working
+        with Final Fantaxy X/X2 textures and it is possible to change them using the convert/create phyre options.<br>
+      <b>•</b> Adjusted the text boxes for Phyre PKG Tool path selections to match those found in Expert and Dolphin modes.<br>
+      <b>•</b> Add a [box] to the Process Selected menu to hold the current operation for the sake of aesthetics.<br>
+      <b>•</b> Rearranged some items on the exclusions tab and adjusted the size of some elements for congruency.<br>
+      <b>•</b> Weblink icons on the [Tool Paths] tab that are associated with multiple programs now open a dropdown menu to select
+        the webpage to desired program. This allows selecting between OptiPNG/OxiPNG and Waifu2x-Caffe/Waifu2x-CPP.<br>
+      <b>•</b> Reversed the order of the [+] and [-] text zoom buttons on the [Help] menu to align with the keyboard positions.<br>
+      <b>•</b> Removed the warning text when checking [in-place] when using the option [Create Material Maps With Ishiiruka Tool].<br>
+      <b>•</b> Fix validating DDS images. I'm not sure if it was broken last version or in v45.0 betas, but it works now.<br>
+      <b>•</b> Fix an issue where every other mipmap could be inverted when creating PNG mipmap textures and flipping/swizzling.<br>
+      <b>•</b> Fix the long standing issue where converting textures using TexConv can cause the image to come out [darker].<br>
+      <b>•</b> Fix automatically setting the Temp Folder to [AppData\Temp] if the current path set in the script is invalid.<br>
+      <b>•</b> Fix exporting a phyre engine image as PNG in the [Basic Image Viewer] (Trails of Cold Steel / FFX/FFX2 Remaster).<br>
+      <b>•</b> Fix the triforce button on the [Split Textures] option to reset the toggleable help text when clicked.<br>
+
+    <hr><h1>v44.0</h1><hr>
+      <b>•</b> Drop support for importing options from almost all versions of CTT-PS below v43.0. This had to be done because of
+        the change from apostrophes to quotes for strings. Paths with apostrophes in their name would not store correctly.<br>
+      <b>•</b> Support the more up-to-date branch of waifu2x-cpp by DeadSix27: <a href="https://github.com/DeadSix27/waifu2x-converter-cpp">https://github.com/DeadSix27/waifu2x-converter-cpp</a><br>
+      <b>•</b> Increase the range for waifu2x-cpp noise to 3 (from 2), and allow setting [0] for both caffe and cpp.<br>
+      <b>•</b> Finish adding support for converting icon files (.ico) to PNG format using [Convert] while in [Expert Mode]. The
+        functionality is pretty basic, it's just meant to quickly create a PNG image (or images) from an icon file.<br>
+      <b>•</b> Remove stupid [sleeps] when starting up, not sure what I was thinking. Booting the script should now be faster.<br>
+      <b>•</b> Fix the long standing issue where converting BC7 to PNG using TexConv caused the image to come out [brighter].<br>
+      <b>•</b> Fix enabling the [Process Selected [!]] buttons when adding ImageMagick to the script for the first time.<br>
+      <b>•</b> Fix Process Selected from counting up invalid texures (textures without [tex1") while in Dolphin Mode. Dragging and
+        dropping a non-Dolphin image would fail, and cause future generated previews to fail when adding Dolphin images.<br>
+      <b>•</b> Fix a bug that allowed texture [Status] to be overwritten in the [Texture List]. Many of the more relevant status
+        messages were hidden due to this bug, so in most cases when textures failed, it was impossible to know why.<br>
+
+    <hr><h1>v43.2</h1><hr>
+      <b>•</b> Add support for processing icon files (.ico) when in [Expert Mode]. This is very untested and was meant for the next
+        major release version, but a few bugs popped up that demanded a quick fix and icon support was already in there.<br>
+      <b>•</b> Fix Waifu2x-CPP. I was using the command line [-noise_level] which works for caffe, but cpp requires [--noise_level].<br>
+      <b>•</b> Fix the script overwriting tool variables when starting if the CTT-PS Programs folder is available. For example, if
+        waifu2x-caffe and waifu2x-cpp are found, it would choose [caffe] on start up even if [cpp] was manually chosen.<br>
+      <b>•</b> Fix adjusting the dialog size when pressing the [?] button on the [Combine Textures: Zelda Options] menu.<br>
+
+    <hr><h1>v43.1</h1><hr>
+      <b>•</b> My webhost was randomly shut down, so I uploaded to a new host. Update website in [About] page to the new address.<br>
+      <b>•</b> Renaming textures on the combine textures grid now swaps names with a texture if an existing texture name is used.<br>
+      <b>•</b> In Combine Multiple Textures, vastly increase the speed textures will be auto-arranged when adding to the grid.<br>
+      <b>•</b> Add an option to the combine textures zelda options to allow selecting the [top-left] texture. This is useful for
+        Super Mario 64 backgrounds which also have overlapping pixels but wrap around on the x-axis (there is no top-left<br>
+      <b>•</b> If auto-arrange when adding textures to the grid has multiple matches, allow selecting which match to use.<br>
+      <b>•</b> Update the tooltips and the help entry for [PNG Alpha Pixel Manipulation]. Descriptions have [to the point] info.<br>
+
+    <hr><h1>v43.0</h1><hr>
+      <b>•</b> Holding shift, control, or alt when clicking on text boxes (Texture Path, Output Path, etc.) have their values
+        automatically cleared. A preference has been added which can be disabled to always enable this behavior.<br>
+      <b>•</b> Unified the [Combine/Split] operations. Values are shared between them, and loading a CTT file loads it for both.<br>
+      <b>•</b> Overhauled the [Combine Textures] GUI (the grid array). Buttons have been made flatter, the index is now shown,
+        button size is now configurable, textures can be selected and moved around, along with other configuration options.<br>
+      <b>•</b> The (.ctt) file created with [Combine Multiple Textures] can now be reloaded into [Combine] to reload all textures
+        and fill out the grid array if it's been built before. The (.ctt) file also holds more information than before.<br>
+      <b>•</b> The Grid Array can now go as high as 40 columns, 40 rows for an insane 1600 segments (do not do this).<br>
+      <b>•</b> It is now possible to combine and split textures while simulating [pixel overlap]. For example, Zelda OoT skyboxes
+        have a single row/column of pixels that overlap between textures. New settings were added to automate this overlap.<br>
+      <b>•</b> Also added the ability to remove garbage pixels when combining, and add back garbage pixels when splitting.<br>
+      <b>•</b> In the Combine Multiple Textures operation, the file extension is no longer used on the [Output Name]. Also allow
+        a bunch of characters in the name that were not previously compatible: . _ , ! ( ) { } + = ` , @ $ # %<br>
+      <b>•</b> When using the combine textures GUI, an option has been added to attempt to auto-arrange Zelda: OoT skybox (or other
+        box type textures). This only works on tiles that have duplicate pixels along the edges (32 textures 64x32 for OoT).
+        All 32 textures must be dropped onto a button at once, and the option must be enabled (triforce button menu).<br>
+      <b>•</b> Fix a very rare bug where the script could delete itself when saving if the PS console was visible and closed.<br>
+      <b>•</b> Fix an issue with the [Tools Master Path] that could prevent [Process Selected] menu from functioning.<br>
+      <b>•</b> Fix several stored options (mostly booleans) not importing correctly when using [Import Stored Options].<br>
+      <b>•</b> Fix grabbing ImageMagick, Python, and 7-zip from the registry if the paths are set but invalid.<br>
+      <b>•</b> Fix storing settings that could break loading the script by replacing apostrophes (') with quotes (").<br>
+      <b>•</b> Fix updating ESRGAN and SFTGAN path textboxes on the [Tool Paths] menu when importing stored options.<br>
+
+    <hr><h1>v42.0</h1><hr>
+      <b>•</b> Add the ability to load a global [Programs] folder that contains almost all programs the script uses. This can
+        be downloaded from the CTT-PS forum post on the Dolphin emulator forums in the [Custom Textures] section.<br>
+      <b>•</b> Remove ImageMagick's ability to create RGBA and ARGB DDS textures. Long ago I threw a few test cases at it and
+        added a workaround, but lately all images are corrupt. Creating RGBA and ARGB DDS textures now requires TexConv.<br>
+      <b>•</b> Clear all default paths for the external tools. This should make it easier to determine what tools are missing.<br>
+      <b>•</b> Slightly increased the horizontal resolution of the [Options] menu so the visible paths fit more neatly.<br>
+      <b>•</b> When in [ToCS Mode], add back support for thesupersonic16's PKG Tool for those who have issues with Sewer56's tool.<br>
+      <b>•</b> Also add an error message when extracting/packing PKG files and the PKG did not successfully extract/pack. <br>
+      <b>•</b> Default the [ToCS Mode] options to always override the [Texture Path] and instead use the output folders.<br>
+      <b>•</b> Automatically repair DDS textures that have the mipmap flag set higher than 1, but don't actually have mipmaps.<br>
+      <b>•</b> Rewrite even more tooltips. Last update nailed about 3/4 of them, and this update I cranked out the last 1/4.<br>
+      <b>•</b> Replace the [Donate] tab with an [About] tab. The shameless donation section is still available for those feeling
+        generous, and I also added a section with some information about the tool. There is now also a [Special Thanks]
+        section that includes anyone who has influenced the development of this script in even the smallest way. <br>
+      <b>•</b> Fix ESRGAN/SFTGAN potentially not working for some users. Using [Invoke-Expression] to use -ErrorVariable was not
+        working as intended. I discovered referencing Error[0] is not only just as, if not more effective, it's cleaner too!<br>
+      <b>•</b> Fix several bugs when converting ToCS phyre images to PNG. Another case of I'm not sure how it was working at all.<br>
+      <b>•</b> Fix ToCS Mode [Create Phyre Textures From PNG/Phyre] to update the texture list when textures are processed.<br>
+      <b>•</b> Fix loading the correct tooltips for the [DDS Format] depending on the CTT-PS Mode set (Dolphin/Expert/ToCS).<br>
+      <b>•</b> Fix not adding *Search Flags* to the fallback compression, which could make it so there is no fallback compression.<br>
+
+    <hr><h1>v41.0</h1><hr>
+      <b>•</b> It is now possible to [Import Stored Options] by dropping an old CTT-PS version onto the [Options] button.<br>
+      <b>•</b> Reverse the ordering of the [Preferences] tab and the [Exclusions] tab on the Options menu.<br>
+      <b>•</b> Renamed several of the Operations within [PNG Alpha Pixel Manipulation] to better describe what they do.<br>
+      <b>•</b> Add a new operation to PNG Alpha Pixel Manipulation to remove invisible white pixels found within a texture.<br>
+      <b>•</b> Add a preference to disable directory recursion of the [Texture Path] when running any operation.<br>
+      <b>•</b> Add tooltip for the [Names/Phrases] section of the [Exclusions] tab found in the Options menu.<br>
+      <b>•</b> The [Process Selected] menu has received an overhaul. Several options have been added and elements moved around.<br>
+      <b>•</b> Add a checkbox in [Process Selected] to disable generating previews when adding textures (speeds up adding).<br>
+      <b>•</b> Add the ability to overwrite textures in-place when using [Process Selected], and/or keep the original file.<br>
+      <b>•</b> Add a [Create Preview] button to the [Add Watermark] operation. Pressing it will generate a preview in a small
+        window on the UI. This tiny window is useless on its own, but can be clicked to open a larger preview window.<br>
+      <b>•</b> Add [Run Custom Code] button to Options [Debug] menu. This should not ever be needed by users. This lets me run
+        PowerShell code while the GUI is active. I can use it to test features or help me modify the GUI in real time.<br>
+      <b>•</b> Add a method to remove any empty folders found from the [Output Path] after running any operation. I have no idea
+        if someone would prefer that this didn't happen, so an option to disable this feature was added to [Preferences].<br>
+      <b>•</b> Replace the [Change Output Folder] button in [Process Selected] to a checkbox, button, and textbox.<br>
+      <b>•</b> Fix [Expert Mode] and [ToCS Mode] to have the proper Texture List headers when loading the script in these modes.<br>
+      <b>•</b> Fix potential issues when using the [In-Place] option when manipulating alpha in PNG textures.<br>
+      <b>•</b> Fix [Basic Image Viewer] PS console error when canceling selecting an image using a button click.<br>
+      <b>•</b> Fix [Process Selected] to properly generate previews for DDS images when dropping a folder full of DDS images.<br>
+      <b>•</b> Rewrite and/or reformat many of the tooltips for Operation specific options to have less horizontal width.<br>
+      <b>•</b> Updated the [Help] dialog with more detailed descriptions of all the new features.<br>
+
+    <hr><h1>v40.1</h1><hr>
+      <b>•</b> Rewrite/refactor the upscale filter code. This should hopefully fix a ton of bugs that were reported + ones I found.<br>
+      <b>•</b> Fix a desync that happens when running the xBRZ upscaling filter that caused the image to fail to be created.<br>
+
+    <hr><h1>v40.0</h1><hr>
+      <header>Main Changes:</header><br>
+      <b>•</b> Resource Pack [ZIP] files can now be compressed using the checkbox on the Resource Pack Manager.<br>
+      <b>•</b> Add a new [Mipmap Option] to completely disable mipmap generation. This could already be done, but this is easier.<br>
+      <b>•</b> Add support for ESRGAN and STFGAN upscaling filters. These require Python v3.6+ and Nvidia CUDA.<br>
+      <b>•</b> Add a tab to Options named [Exclusions]. Here options can be found to disable processing textures.<br>
+      <b>•</b> Add a tab to Options named [Misc]. Here buttons to all the [Additional Options] from various operations can be found.<br>
+      <b>•</b> Add Auto-Install section for ESRGAN and SFTGAN in the Options dialog on the [Misc] tab.<br>
+      <b>•</b> Create path links for Python, ESRGAN, and STFGAN on the [Tool Paths] menu.<br>
+      <b>•</b> The [Seamless Method] when applying upscaling filters to textures once again checks images for transparency rather
+        than an alpha channel. It also uses a faster method using texture segments rather than tiling the image 9 times. The
+        default state is now [Disabled] since the seamless method can introduce noise along the edges of a texture.
+      <b>•</b> Add back the Web Link icons to the [Tool Paths] menu with a new look. Disable clicking on title to open the link.<br>
+      <b>•</b> Updated the much neglected [Help Menu] with all the new stuff from the past few versions.<br>
+      <b>•</b> Also add two new icons to the Help Menu, a label for the zoom features, and a new option to adjust the list size.<br>
+      <b>•</b> Implement new methods for grabbing ImageMagick, 7-Zip, and now Python from the registry. The variables for these
+        options in the script's header should now just hold a blank value ('') to trigger these checks.<br>
+      <b>•</b> All images can now be converted to JPG. Previously I blocked images that had an alpha channel).<br><br>
+
+      <header>GUI Changes:</header><br>
+      <b>•</b> Add [Open Folder] buttons to the Texture and Output Paths, rather than click the groupbox header.<br>
+      <b>•</b> Various appearance changes to the Options menu. As mentioned above, a few new tabs have been added.<br>
+      <b>•</b> The [Upscale Factor as Target] option in [Apply Upscaling Filter to All Textures] is now hidden in [Expert Mode].<br>
+      <b>•</b> Change the [Quick Help] button to match the size of the [Operation] dropdown menu.<br>
+      <b>•</b> Show slightly different properties on the [Texture List] depending on the selected [CTT-PS Mode]. While ToCS
+        Mode had its own properties for awhile, Expert Mode did not, and showed useless data such as [Old Dimensions].<br>
+      <b>•</b> Clean up the code for importing and storing options. This was left in kind of a mess since the rewrite.<br>
+      <b>•</b> Add totals for some operations to the Texture List after all textures are processed. For example, when optimizing
+        with OptiPNG, display the total storage recovered. Or when removing alpha channels, display the total removed.<br><br>
+
+      <header>Bug Fixes:</header><br>
+      <b>•</b> Fix missing messages when selecting the [Texture Path] or [Output Path] via the [...] buttons.<br>
+      <b>•</b> Fix importing boolean values into the script. All other variable types seemed to be working.<br>
+      <b>•</b> Fix Texture/Output Path button positions when switching between [Window] and [Docked] Texture List modes.<br>
+      <b>•</b> Fix resource pack database to not be copied into generated packs if CTT-PS is the root folder.<br>
+      <b>•</b> Fix tooltip issues with Ishiiruka Tool and OptiPNG (found on the Tool Paths menu).<br>
+      <b>•</b> Fix other dialogs from being accessed from the Options dialog when opening it with the [Options] button.<br>
+      <b>•</b> Fix [Basic Image Viewer] falling behind the main window when opening it a second time in a single run.<br>
+      <b>•</b> Fix [DDS Fallback] and [Flag Removal] to not disable when switching CTT-PS Modes and DDS Format is *Search Flags*.<br>
+
+    <hr><h1>v39.5</h1><hr>
+      <b>•</b> Revert back to using 7-Zip when creating resource packs. It seems .NET Framework compresses no matter what.<br>
+      <b>•</b> Unfortunately this means that the texture list will once again not populate as textures are being zipped.<br>
+
+    <hr><h1>v39.4</h1><hr>
+      <b>•</b> When creating/updating resource packs, populate the texture list with files as they are zipped.<br>
+      <b>•</b> Changing the GameID on the Resource Pack Manager will now update the actual GameID folder when in [Update] mode.<br>
+      <b>•</b> Moved the Basic Image Viewer to the bottom of the list, just above the Resource Pack Manger.<br>
+      <b>•</b> Fix [Create a Resource Pack] to actually add the textures to the zip file (epic fail).<br>
+      <b>•</b> Fix resource pack option [Only Create Manifest.json] to show the output path instead of the texture path.<br>
+      <b>•</b> Fix dragging and dropping an output path onto the resource pack manager output path.<br>
+      <b>•</b> Fix a few of the operation option headers descriptions in [ToCS Mode].<br>
+
+    <hr><h1>v39.3</h1><hr>
+      <b>•</b> Removed the 7-Zip requirement to create resource packs. ZIP files are now created using .NET Framework.<br>
+      <b>•</b> All zip operations are now threaded so the dialog does not freeze up when archiving or extracting.<br>
+      <b>•</b> Add a new operation to the Resource Pack menu that allows updating an existing resource pack.<br>
+      <b>•</b> Resource Packs can now be stored in a database file and selected from a dropdown menu on the manager.<br>
+
+    <hr><h1>v39.2</h1><hr>
+      <b>•</b> Add an option to the Resource Pack GUI to import a resource pack [zip] or [manifest.json] file.<br>
+      <b>•</b> When adding images to the [Basic Image Viewer], modify the file select menu to allow selecting all file types.<br>
+      <b>•</b> Fix disabling the main Options button and the Texture/Output path on the Resource Pack dialog when creating.<br>
+      <b>•</b> Fix various options saving the [last accessed path] when selecting external files.<br>
+
+    <hr><h1>v39.1</h1><hr>
+      <b>•</b> Hopefully fix all issues dealing with the temporary path.<br>
+      <b>•</b> Reinsert missing functions for overriding the master input and output path.<br>
+      <b>•</b> Prevent adding non-Dolphin textures to the [Process Selected] menu while in Dolphin Mode.<br>
+
+    <hr><h1>v39.0</h1><hr>
+      <b>•</b> Massive refactor. Eliminated all the scattered boot code that runs when the script is first launched.
+        Everything is now in functions and ran from an [Initialization] block. I expect new and interesting bugs to pop up.<br>
+      <b>•</b> Removed support for Nvidia Texture Tools. TexConv + Compressonator together makes it have no practical use.<br>
+      <b>•</b> Revamped the default GUI to have most options contained within in a single window (docked mode untouched).<br>
+      <b>•</b> Change the names of the Texture List modes. Always Visible is now [Window] and Hide When Idle is now [Hidden].<br>
+      <b>•</b> The options window, now shared across docked and undocked (previously only displayed in docked mode), is no longer
+        a child window to the main window. This means that it does not need to be closed before accessing other windows.<br>
+      <b>•</b> Move Paths, Preferences, Restore Defaults, and Imported Stored Options to the [Options] window.<br>
+      <b>•</b> Add all programs to the list on the [Tool Paths] window that were missing (7-Zip, ToCS PKG Tool).<br>
+      <b>•</b> Add preference to minimize all visible dialog windows when minimizing any dialog window.<br>
+      <b>•</b> Add [Debug] tab to options menu that exposes the hidden options of this script. This is something I've been meaning
+        to do for awhile (especially for my own convenience). Because they can be dangerous, a warning was put in place.<br>
+      <b>•</b> Remove the debug option that toggles the double buffer fix for texture list flicker (it's now always on).<br>
+      <b>•</b> Redesign the GUI for creating Resource Packs. It is now wider vs. taller, and Input/Output paths have been added.<br>
+      <b>•</b> Prevent illegal characters from being entered into the resource pack ID and zip name.<br>
+      <b>•</b> Reinstate a bunch of old code for the PowerShell console (center it, give it an icon, set the window size).<br>
+      <b>•</b> Fix some window layering issues when toggling the GUI [Top-Most Window] preference.<br>
+      <b>•</b> Fix [Export as PNG] button on the Basic Image Viewer if exporting a non-Dolphin texture in [Dolphin Mode].<br>
+      <b>•</b> Fix double buffering when VisualStyles are disabled. This once again allows [Classic Windows] look to be an option.<br>
+      <b>•</b> Fix ToCS Mode operation [Create Phyre Textures from PNG/Phyre] option [File Extension] to properly save the value.<br>
+      <b>•</b> Fix typo in default path to Ishiiruka Tool (TexturEncoder.exe fixed to TextureEncoder.exe).<br>
+      <b>•</b> Fix toggling [Disable GPU] on the [Extra Options] menu when toggling it on the waifu2x menu when using Waifu2x-CPP.<br>
+      <b>•</b> Fix [Save options on close] option to not force saving the Texture and Output paths at random.<br>
+
+    <hr><h1>v38.0</h1><hr>
+      <b>•</b> Fix a bug with mipmap levels being flipped incorrectly when certain mipmap options were toggled on along with the
+        Flip PNG Result option. This also affected the Basic Image Viewer when decoding ToCS phyre images.<br>
+      <b>•</b> Hide the Process Selected button [!] for operations that do not benefit from it.<br>
+      <b>•</b> Launching the [Basic Image Viewer] no longer hides other CTT-PS windows and can be used while setting up some of
+        the other options of the script. The viewer is not threaded, so loading a texture will still freeze the window.<br>
+      <b>•</b> Disable the minimize buttons when running any operation. Sometimes the main dialog and texture list dialog windows
+        refuse to maximize when an operation is in progress. This is to hopefully prevent that annoyance.<br>
+      <b>•</b> Added a help topic for Dolphin Resource Packs (although I doubt anyone will need the help, it's there just in case).<br>
+      <b>•</b> Make the [Help] dialog 100 pixels wider by default. It can still be squished and stretched.<br>
+
+    <hr><h1>v37.0</h1><hr>
+      <b>•</b> Add a feature to generate Dolphin Resource Packs. This can be found at the bottom of the [Operations] list while in
+        Dolphin Mode. Creating a resource pack requires a valid installation to 7-Zip.<br>
+
+    <hr><h1>v36.3</h1><hr>
+      <b>•</b> Hopefully fix all issues when using Waifu2x-Caffe to upscale textures.<br>
+      <b>•</b> Update many of the [ToCS Mode] options and fix several issues. This was needed for my latest ToCS texture packs.<br>
+
+    <hr><h1>v36.2</h1><hr>
+      <b>•</b> Fix generating DDS textures. The pixel array was off by one causing the texture to become corrupt.<br>
+
+    <hr><h1>v36.1</h1><hr>
+      <b>•</b> Fix a serious issue where converting large textures to DDS could cause PowerShell to consume several GB of RAM.<br>
+      <b>•</b> Fix updating the texture lists in the [Basic Image Viewer] and [Process Selected] dialogs. When using the arrow
+        buttons to navigate the list, the selected item on the texture list is now updated to match the current index.<br>
+      <b>•</b> Fix the clear button on [Combine Multiple Textures]. I think I broke it when doing a clean-up in v36.0.<br>
+      <b>•</b> Fix [Calculate Textures VRAM Requirement] to reset the default message displayed when an invalid path is entered.<br>
+      <b>•</b> If a [~bg.png] file is tossed into the script's directory for a background image, don't copy it when converting.<br>
+
+    <hr><h1>v36.0</h1><hr>
+      <b>•</b> Drag and Dropping a folder onto the [Process Selected] window will now keep the folder structure when processing.<br>
+      <b>•</b> PNG Alpha Pixel Manipulation will now also modify alpha pixels for all mipmaps included with the texture.<br>
+      <b>•</b> Force a [safe] Temporary Folder name when starting the script (it must contain [CTT-PS_Temp"). If it's been edited
+        in the script's header, users could force an [unsafe] value for it, which could lead to destroying personal files.<br>
+      <b>•</b> Fix setting the upscale factor for xBRZ. I was trying to use an integer as a string and failed to convert it.<br>
+      <b>•</b> Fix a race condition (I think) when applying upscale filters to textures using any filter or options.<br>
+      <b>•</b> Fix hiding waifu2x options button when switching to xBRZ from waifu2x (other options had no issue).<br>
+      <b>•</b> Fix switching and updating the texture list mode when options are imported or restored from defaults.<br>
+      <b>•</b> Fix importing the [Temporary Folder] from any version of this script. If the imported temporary folder matches the
+        default, if it set to the default, or if it is invalid, the method to grab the folder is rewritten to the header.<br>
+      <b>•</b> Fix several issues with the operations in [ToCS Mode] (which I might be needing again soon).<br>
+      <b>•</b> Fix the location of the texture list operation panel. It was off by 5 pixels when launching in [Always Visible].<br>
+      <b>•</b> Fix the debug option [DisableDoubleBuffer] for what it's worth. Somehow the toggle was deleted and it was always on.<br>
+
+    <hr><h1>v35.0</h1><hr>
+      <b>•</b> Add a new CTT-PS option called [Texture List], which can hide the list or dock it into the main window.<br>
+      <b>•</b> [Process Selected] dialog can now be accessed via a [!] button that is found to the right of the [Start] button. It
+        should be noted that holding [Control] while pressing [Start] no longer brings up this menu for obvious reasons.<br>
+      <b>•</b> Update the Process Selected dialog to show texture information and a list that shows all images in the stack.<br>
+      <b>•</b> Allow adding a custom background image for a docked texture list. Simply put a [~bg.png] file in the script folder.<br>
+      <b>•</b> The log file will now only display enabled options if they are used in the selected operation.<br>
+      <b>•</b> Debug variable [DialogUpdateRate] now also affects the rate of the pause loop since actions take place when paused.<br>
+      <b>•</b> All tooltips appear 25% faster than before, while some crucial ones appear even faster than that.<br>
+      <b>•</b> Various improvements to the log file. I could explain them all, but just assume that it's better now.<br>
+      <b>•</b> Fix [Process Selected] to allow overriding the [Output Path]. It was currently not working and using the default.<br>
+      <b>•</b> Fix issues with operations that override the [Texture Path]. They could often fail restoring the original path.<br>
+      <b>•</b> Fix a few more issues with importing options with legacy values (meaning, variables that now use different values).<br>
+
+    <hr><h1>v34.5</h1><hr>
+      <b>•</b> Update the [DDS Tool] and [DDS Format] lists if the tool paths are valid when importing stored options.<br>
+      <b>•</b> Once again support changing the [TempFolder], and allow importing the TempFolder from older versions of CTT-PS.<br>
+      <b>•</b> Fix [Process Selected] left/right buttons, and properly clear the texture array when the window is closed.<br>
+      <b>•</b> Fix all remaining bugs with [Import Stored Options]. ImageMagick path can now be changed successfully.<br>
+      <b>•</b> Fix adding the [Add Tool..] option to the DDS Tool list when not all programs are found.<br>
+      <b>•</b> Fix not adding the BC7 format (and all the other DDS formats in Expert Mode) when TexConv isn't found.<br>
+
+    <hr><h1>v34.4</h1><hr>
+      <b>•</b> Fix importing ImageMagick path. For real this time...
+
+    <hr><h1>v34.3</h1><hr>
+      <b>•</b> Make sure Importing Stored Options works on every old version of CTT-PS.
+
+    <hr><h1>v34.2</h1><hr>
+      <b>•</b> Fix Rescale Textures not including the label of the format on the output folder.<br>
+      <b>•</b> Redesign the way options are imported into the script and the way they are stored when the script is closed.<br>
+      <b>•</b> The [Quick Help] button no longer closes the [Help Window] if it is already open when pressed.<br>
+      <b>•</b> If ImageMagick is not found, disable both start buttons. They can be enabled by linking the ImageMagick path.<br>
+      <b>•</b> Fix selecting an Operation after changing the CTT-PS Mode. It could lose the index and the options not show up.<br>
+
+    <hr><h1>v34.1</h1><hr>
+      <b>•</b> Fix waifu2x [Conversion Mode] from defaulting to [Noise_Scale] which has been replaced with [Both]. This caused the
+        selected option to show up blank on the waifu2x menu. Also fixed [Restore Defaults] from setting the bad value.<br>
+      <b>•</b> Make waifu2x maximum noise reduction 3 when no waifu2x app is selected. Fixes an issue with Import Stored Options.<br>
+
+    <hr><h1>v34.0</h1><hr>
+      <b>•</b> Drop support for ImageMagick v6 and PowerShell v2. I apologize if this causes inconvenience, but going forward
+        ImageMagick v7 is required and PowerShell v3 is the minimum working version. Both can be easily updated though.<br>
+      <b>•</b> All Standard and Advanced options have been merged into a single list called [Operations]. The selection buttons
+        have been removed, and the [Quick Help] button is now shown through a mouse over event (and can be disabled).<br>
+      <b>•</b> The PowerShell console has been replaced with a fancy new texture list GUI that allows more control when textures
+        are being processed. The console still appears for a brief moment on load, but it is no longer possible to use it
+        to display progression. It shouldn't be missed, the GUI window does everything the console could do and more.<br>
+      <b>•</b> The xBRZ upscaling filter can now be set to 16x like all other filters (old max was 6x). This is accomplished by
+        applying the 6x filter, followed by a 2x or 3x filter to that result, and finally the image is rescaled.<br>
+      <b>•</b> Calculate Textures VRAM Requirement now uses the [Texture Path]. A custom path can still be applied.<br>
+      <b>•</b> The [Basic Image Viewer] has been completely recoded but will still function the same. The properties window will
+        now expand when the data exceeds the width, and clearing the viewer no longer completely resets the window.<br>
+      <b>•</b> Add an [Export PNG] button to the Basic Image Viewer. This will allow exporting the currently loaded image as a PNG
+        file. This can be useful if viewing several BC7 or ARGB8 textures and the original PNGs no longer exist.<br>
+      <b>•</b> Selecting a [CTT] file will now try to pick the texture from the CTT file's location, rather than the stored path.<br>
+      <b>•</b> Added a new Advanced Option [PNG Alpha Pixel Manipulation]. This provides several different operations to modify
+        alpha pixels found in textures. Some textures use alpha in odd ways to create different in-game effects.<br>
+      <b>•</b> Allow dropping an older CTT-PS version onto the [Import Stored Options], rather than manually search for it.<br>
+      <b>•</b> The Advanced Option [Extract Internal DDS Mipmaps] will now extract to the output path rather than overwrite the
+        textures directly. An [In-Place] option has been added to restore the old behavior of modifying textures directly.<br>
+      <b>•</b> Add a [Clear] button to the [Combine Multiple Textures] texture selection dialog that removes all selected textures.<br>
+      <b>•</b> Pop-up GUI windows now have a green icon instead of reusing the blue icon used on the main dialog window.<br>
+      <b>•</b> Fix the [Manual Rescale] option to not hide texture details in the console when other modes are being used.<br>
+      <b>•</b> Fix a bug affecting texture header validation. All [tex1] textures would pass even if they were corrupt or unknown.<br>
+      <b>•</b> Updated and added several topics to the [Help] menu. It has been out of date for quite some time. Also replaced
+        every instance of [dynamic] mipmap with [arbitrary] mipmap, and removed options that no longer exist.<br>
+
+    <hr><h1>v33.0</h1><hr>
+      <b>•</b> If the output path exceeds 260 characters when creating textures, alert the user why the texture was not created.<br>
+      <b>•</b> The option [Scan Dolphin Textures For Issues] will now automatically remove any spaces found in a texture name.<br>
+      <b>•</b> Increase Upscale Factor maximum limit to 16x when applying upscale filters to textures. xBRZ still has a max 6x.<br>
+      <b>•</b> Improvements to the interface for the [Split Combined Multi-Texture] option. Options are now arranged in the order
+        of steps users should take if they are loading a [.ctt] file or blindly selecting an image to split.<br>
+      <b>•</b> When splitting textures, allow dragging and dropping a [.ctt] file onto the button or a texture onto the text bar.<br>
+      <b>•</b> Rename Texture Options to [DDS Texture Options] because all options found here only affect DDS textures.<br>
+      <b>•</b> Add a status message to the log when skipping textures with the Extra Option [Skip Texture if Output Exists].<br>
+      <b>•</b> Fix texture hashes triggering false flags when [Search Flags] is used when creating DDS textures. A texture hash
+        can start with [_bc6] for example, and force the script to create the texture with BC6 compression.<br>
+      <b>•</b> Fix the [Process Selected] option (hold Control when pressing Start). It has been completely broken for some time.<br>
+      <b>•</b> Fix a bug that could add extra overhead when converting certain DDS formats to PNG when using Compressonator.<br>
+
+    <hr><h1>v32.0</h1><hr>
+      <b>•</b> Add a new option when applying upscaling filters named [Upscale Factor as Target]. This option only works on Dolphin
+        textures. What this does is allow upscaling an image to a specific upscale factor relative to the original texture
+        dimensions, exactly how [Rescale Textures With New Scaling Factor] works. The resulting upscale factor of textures
+        will always equal the Upscale Factor in this mode. So a 2x, 4x, 5x, or 7x texture will all be resized to 8x.<br>
+      <b>•</b> Increase the texture upscale size limit to 16384x16384 for a maximum of 32768x32768 (2x upscale).<br>
+      <b>•</b> Move Waifu2x options to their own window. This is accessible via a button when selecting waifu2x.<br>
+      <b>•</b> Fix applying upscaling filters to grayscale images once and for all. The result should never lose transparency.<br>
+      <b>•</b> Fix the script loading the last selected option when it was previously closed. For some reason when adding new modes
+        I started to encounter various GUI bugs. I'm still not sure what is going on, but I have a work-around in place.<br>
+
+    <hr><h1>v31.3</h1><hr>
+      <b>•</b> Fix an error message that pops up briefly when starting the script.<br>
+      <b>•</b> Disable [Debug] mode, I accidentally had it enabled by default.<br>
+      <b>•</b> Add a debug option to always add BC7 to the selection lists.<br>
+
+    <hr><h1>v31.2</h1><hr>
+      <b>•</b> Fix textures sometimes being flipped when they shouldn't have been when converting in some situations.<br>
+      <b>•</b> Add an [Extra Option] to allow selecting the preferred program to convert complex DDS formats to PNG.<br>
+
+    <hr><h1>v31.1</h1><hr>
+      <b>•</b> Fix the requirements for adding certain compression types to the list, and fix BC7 not showing up in Dolphin Mode.<br>
+
+    <hr><h1>v31.0</h1><hr>
+      <b>•</b> Fix a long standing bug where DDS textures were not regenerated if the texture already exists in the output path.<br>
+      <b>•</b> Add support for creating L8, A8, and LA8 while in Expert Mode.<br>
+      <b>•</b> Add support for converting L8, A8, LA8, and RGB8 textures to other formats.<br>
+      <b>•</b> Fix hiding Dolphin specific options if the script is loaded in Expert Mode.<br>
+      <b>•</b> Fix generating uncompressed DDS mipmaps with ImageMagick. It fails to pad the final mipmap with at least 4 bytes if
+        the image did not have transparency. In this situation, I add 1 extra byte with the value FF (meaning fully opaque).<br>
+      <b>•</b> Add [ToCS Mode] which allows converting and working with phyre textures from Trails of Cold Steel I and II. It is
+        unfortunate that this did not really pay itself off. Many textures with increased resolution are cut off in-game
+        and do not scale down to fit the area the original resolution. While it has it's uses, it is mostly pointless.<br>
+
+    <hr><h1>v30.0</h1><hr>
+      <b>•</b> Removed [Allow All Images] and replaced it with [CTT-PS Mode]. Currently there are only two modes: [Dolphin Mode]
+        and [Expert Mode], which works similar to how Allow All Images did (Expert would be if it was toggled to on). This
+        allows me to expand what the tool is capable of in the future, while still being somewhat simple for Dolphin packs.<br>
+      <b>•</b> All DDS compression modes have been named to the DX10 BC (block compression) naming scheme. BC1-DXT1, BC3-DXT5,
+        etc. ARGB32 was also renamed to ARGB8, which seems to be more widely recognized (but means the same thing).<br>
+      <b>•</b> Added a bunch of new DDS compression formats in Expert Mode: BC2, BC4, BC5, BC6, and uncompressed RGBA8.<br>
+      <b>•</b> DX10 header support. When the script finds a DX10 header, it is no longer converted to a DX9 header automatically.<br>
+      <b>•</b> It is now possible to force textures to be generated with the DX10 header in expert mode. This is not suggested for
+        uncompressed textures in Dolphin, as they do not seem to work. ARGB8 for example, does not load with a DX10 header.<br>
+      <b>•</b> The script now writes all DDS headers so they remain consistent with every tool and follow Microsoft's standard.<br>
+      <b>•</b> Add a new set of options when converting or rescaling textures called [Extra Options]. This includes options that
+        allow skip creating textures if the output exists, flipping the texture, and Disable GPU Acceleration was moved
+        here. When any of these options are enabled, a red light will display to remind that these options are enabled.<br>
+      <b>•</b> Do not count PNG mipmaps for non-Dolphin textures on the title bar if the images contain the [_mip] flag.<br>
+      <b>•</b> Show the Direct-X header type of an image when loaded into the [Basic Image Viewer] in the Format section.<br>
+      <b>•</b> Added a new [_mm#] flag to force the number of mipmaps for a specific texture. For example, a texture with the name
+        [TexName_mm3.png] will generate 3 mipmaps for that texture. If custom mipmaps are supplied, they should NOT contain
+        the flag, mipmap 1 should be named [TexName_mip1.png] for example. The flag does not work on folders. When textures
+        are converted to PNG, the flag is always removed. When converting to DDS, it respects the [Flag Removal] setting.<br>
+      <b>•</b> Increase the number of mipmaps that can be forced with [Max MipMap Levels] to 15 (from 9), and add a fail safe.<br>
+
+    <hr><h1>v29.4</h1><hr>
+      <b>•</b> Display the full version of ImageMagick on the title bar when the script is first loaded.<br>
+      <b>•</b> Fix upscaling filter seamless method to preserve transparency when dealing with some grayscale images.<br>
+      <b>•</b> Remove [Lancos] upscaling filter. IM renamed the option, but rather than fix it I removed it.<br>
+
+    <hr><h1>v29.3</h1><hr>
+      <b>•</b> Fix the rare situation of finding false postives when searching for alpha channels during texture initialization.<br>
+      <b>•</b> When removing alpha channels from textures, also search for mipmap levels and remove it from them too if found.<br>
+
+    <hr><h1>v29.2</h1><hr>
+      <b>•</b> A new advanced option is available called [Add/Remove Arbitrary Mipmap Suffix]. This searches for Dolphin mipmap
+        textures, and will automatically add or remove the [_arb] suffix from the texture name. This modifies textures
+        directly within the [Texture Folder], so it should be used with caution. It is not an option that is suggested for
+        entire texture packs, but rather a handful of WIP textures that were selected to quickly modify the suffix.<br>
+
+    <hr><h1>v29.1</h1><hr>
+      <b>•</b> Replace an [in] check when creating watermarks that doesn't work in PowerShell v2.0.<br>
+      <b>•</b> Update the description of [Remove Alpha Channel From Opaque Textures]. I forgot to remove the part about DDS images.<br>
+
+    <hr><h1>v29.0</h1><hr>
+      <b>•</b> Converting DDS BC7 textures to PNG now uses Compressonator, and falls back to TexConv if it's unavailable.<br>
+      <b>•</b> When the script reads a texture, only check PNG images for the existence of an alpha channel, rather than looping
+        through every pixel attempting to find transparent pixels. For the majority of this script, this will not have any
+        impact on resulting images, while offering an ENORMOUS speed up when working with PNG textures. The functionality
+        of searching for transparent pixels is still used in [Remove Alpha Channel From Opaque Textures] which I highly
+        suggest using at least once to flesh out false positives: meaning, alpha channels in textures that don't need them.<br>
+      <b>•</b> When generating missing mipmaps, use the previously generated mipmap level as a base for the next mipmap instead
+        of the top level. The result is basically the same as before, but overall generation speed is greatly reduced. The
+        previous level is only selected when the mipmap does not change, and will not interfere with any mipmap options.
+        DDS will always the final available mipmap, so this method is only used for DDS when no mipmaps are provided.<br>
+      <b>•</b> Remove the [Fast Mipmaps] function from the script. From now on, it will only use my custom mipmap building method.
+        With the optimizations above, custom mipmaps are nearly as fast as the [fast] method was. This is not the reason I
+        removed it however, certain tools just don't have the control that I need. Compressonator does not generate levels
+        down to 1x1, and Nvidia Tools does not allow specifying a number. My custom mipmap method of combining them gives
+        me full control over the number of mipmap levels that get generated, and allows applying a sharpening filter.<br>
+      <b>•</b> Speed up error checking DDS textures by using the mipmap flag in the header rather than counting extracted mipmaps.<br>
+      <b>•</b> Omit the [_arb] suffix when creating watermarks on textures. It's just useless noise when creating short names.<br>
+      <b>•</b> Fix mipmaps not showing up in the [Basic Image Viewer] for DDS textures when [Force New Mipmaps] is enabled.<br>
+      <b>•</b> Update the [Basic Image Viewer] to also show the texture format. This is most useful for DDS BC7/ARGB32 textures.<br>
+      <b>•</b> Rename [Remove Invalid Mipmaps] to [Remove Invalid Mipmaps From Dolphin Textures], and only search [tex1] images.<br>
+      <b>•</b> Rework [Remove Alpha Channel From Opaque Textures] to only work on PNG images that have an alpha channel and contain
+        transparent pixels. Before it only checked for transparency, and not the channel's existence so false positives were
+        possible. It no longer works on DDS, it was originally designed for DXT1/DXT5 and before BC7 and ARGB32 support.<br>
+      <b>•</b> Fix [Hide Weblink Icons] from displaying an error message and messing up the Nvidia Tools icon when toggling.<br>
+      <b>•</b> More tooltip updates to better describe some things, basically useless filler for this changelog.<br>
+
+    <hr><h1>v28.1</h1><hr>
+      <b>•</b> Allow adjusting the quality of BC7 images that are created with Compressonator (thanks Techie Android).<br>
+      <b>•</b> Rename [User Defined] compression to [*Search Flags*] so it better describes what the option actually does.<br>
+      <b>•</b> When applying upscaling filters to textures, also upscale any mipmaps that are found with the texture.<br>
+
+    <hr><h1>v28.0</h1><hr>
+      <b>•</b> Remove multiple redundant alpha checks when working with PNG textures. This fixes a regression, I used to have two
+        functions that got dimensions: one just got dimensions, the other much more info. I removed the dimensions version
+        and replaced all instances with the other. This caused a major slowdown because of alpha checks, but is now fixed.<br>
+      <b>•</b> Improve the accuracy of calculating textures prefetched RAM / VRAM requirement (should now match Dolphin exactly).<br>
+      <b>•</b> The console window will now report the aspect ratio in its own category, rather than after the dimensions.<br>
+      <b>•</b> Also show the original dimensions and original aspect in parenthesis after the custom texture values.<br>
+      <b>•</b> Changes to the log file. Dimensions for original and custom texture are bundled into the same value in the form of
+        custom dimensions (original dimensions). Aspect ratio now has its own field, and follows the same rule.<br>
+      <b>•</b> Do not show [original] texture values in console and log for non-Dolphin textures (dimensions, aspect, scale).<br>
+      <b>•</b> When using user defined DDS compression, alert the user that all flags are being removed from folders after all
+        textures have been converted. Depending on the number of folders in the pack, this process can take some time.<br>
+      <b>•</b> Only run the function to remove flags when DDS is selected. Before it was always attempting to remove flags.<br>
+      <b>•</b> Drop support for the old [.nrm] material map. Ishiiruka has used the [.mat] suffix for some time now.<br>
+      <b>•</b> Tons of code clean-up, refactoring, and optimizations. As always, I expect new bugs to appear.<br>
+
+    <hr><h1>v27.7</h1><hr>
+      <b>•</b> Fix hiding the additional options for waifu2x when selecting the xBRZ filter when waifu2x is currently selected.<br>
+
+    <hr><h1>v27.6</h1><hr>
+      <b>•</b> Replace Nvidia DDS Utilities with Nvidia Texture Tools. It can encode BC7 DDS textures but it is very slow when
+        using the CPU to create textures. I have not been able to get CUDA working yet which should speed things up.<br>
+      <b>•</b> Add option [Disable GPU Acceleration] when converting/rescaling textures. This can be useful for virtual machines.<br>
+      <b>•</b> Removed a long standing garbage work-around that I hope won't affect anything. At one point I found a few DXT1 DDS
+        images that TexConv could not read. So I created a work-around to recreate the image with ImageMagick, but this also
+        required running tests. This was done for every texture when using either Compressonator or TexConv, and ultimately
+        slowed down the entire process of converting textures. Only time will tell if some other workaround will be needed.<br>
+      <b>•</b> Add reporting more enabled options in the log file header that have been added over time.<br>
+
+    <hr><h1>v27.5</h1><hr>
+      <b>•</b> Allow ImageMagick to be able to create ARGB32 textures. Apparently it can do this, and it can do it well.<br>
+      <b>•</b> If the selected DDS tool is no longer found when loading the script, instead default the tool to ImageMagick.<br>
+      <b>•</b> Fix a bug that adds an additional set of BC7 and ARGB32 options to [DDS Fallback] when adding TexConv to the script.<br>
+
+    <hr><h1>v27.4</h1><hr>
+      <b>•</b> Rewrote the flag removal code because it had some inherent flaws. When using [User Defined] compression, if a path
+        contained multiple flags that were also folders, only the first flag folder would be properly removed. For example,
+        the path [Folder\_ARGB32\SubFolder\_BC7\], the BC7 folder will not be removed, and the contents of the folder were
+        not shifted back to [SubFolder]. The new code now handles any number of flags, although a max of 2 is suggested.<br>
+
+    <hr><h1>v27.3</h1><hr>
+      <b>•</b> When using TexConv to create ARGB32 textures, use B8G8R8A8 instead of R8G8B8A8 to match the D3D9 equivalent. This
+        fixes a bug where blue=red and red=blue on some setups or Dolphin versions (potentially only Ishiiruka).<br>
+
+    <hr><h1>v27.2</h1><hr>
+      <b>•</b> Calculating textures VRAM requirement now only works on Dolphin textures unless [Allow All Images] is checked.<br>
+      <b>•</b> Also count the number of each file type (PNG, JPG, DDS) when calculating VRAM and display it at the end.<br>
+      <b>•</b> Update all download links to ImageMagick to use the new links offered on it's site.<br>
+
+    <hr><h1>v27.1</h1><hr>
+      <b>•</b> Add an option to automatically remove compression flags when using [User Defined] compression.<br>
+
+    <hr><h1>v27.0</h1><hr>
+      <b>•</b> A new Standard Option has been added named [Calculate Textures VRAM Requirement], which does just that.<br>
+      <b>•</b> Add a new DDS Compression type option: User Defined. This allows setting a flag in the texture path to force the
+        compression used when creating DDS. The available flags are _DXTC (or _DXTN), _DXT5 (or _BC3), _BC7, or _ARGB32.
+        For example, convert all textures to BC7 in [C:\Textures\Environment_BC7\] or [C:\Textures\_BC7\Environment]. The
+        script will only look for and use these flags when DDS Compression is set to [User Defined].<br>
+      <b>•</b> Renamed the [DDS Compression] option ARGB_8888 to [ARGB32] (aka: DXGI_FORMAT_R8G8B8A8_UNORM).<br>
+      <b>•</b> Allow adding a DDS program from the [DDS Creation Software] dropdown box by selecting [Add Tool...].<br>
+      <b>•</b> Allow adding xBRZ or Waifu2x from the [Upscale Filter] dropdown box by selecting [Add Filter...].<br>
+      <b>•</b> Setting the paths for Ishiiruka Tool and OptiPNG have also been added to the [Standard] options that use them.<br>
+      <b>•</b> List keyboard shorcuts for 'Pause' and 'Cancel' in the console window when processing textures with any option.<br>
+      <b>•</b> Rather than show the generic [Processing textures...] message, display the operation (ex: [Filtering textures...").<br>
+      <b>•</b> When cancelling processing with the Escape key, the script will now ask to delete the partially generated folders.<br>
+      <b>•</b> Slightly increased the default size of the help dialog (the window that shows when pressing [Help] or [Quick Help").<br>
+      <b>•</b> Fix [Rescale Factor] allowing 0.00 which causes division by 0 errors. Instead allow a minimum of [0.01].<br>
+      <b>•</b> Fix creating mipmaps when applying an upscaling filter to DDS textures while simultaneously converting them to PNG.<br>
+      <b>•</b> Fix toggling [Hide Weblink Icons] check box. There was a bug causing the labels to be arranged incorrectly.<br>
+      <b>•</b> Fix the arrangement of the Weblink icons so that they open the page that matches the corresponding tool.<br>
+      <b>•</b> Fix importing the background color and path to Nvidia DDS Utilites when using the [Import Stored Options] button.<br>
+      <b>•</b> Fix adding DDS Utilities to the list if the path is updated after the tool has already been launched.<br>
+      <b>•</b> Updated various tooltips and rewrote many item descriptions in the built in [Help] document.<br>
+
+    <hr><h1>v26.2</h1><hr>
+      <b>•</b> Rename the option Force Internal DDS Mipmaps to [Force Create Mipmaps].<br>
+      <b>•</b> Allow forcing mipmaps when creating non-Dolphin PNG textures when [Force Create Mipmaps] is checked.<br>
+      <b>•</b> Remove the [Seamless Crop %] option. Rather than making it configurable, it is always set to 75%.<br>
+      <b>•</b> Allow setting the output format when applying upscaling filters to textures.<br>
+      <b>•</b> Add compatibility for BC7 and uncompressed DDS textures when applying upscaling filters to textures.<br>
+      <b>•</b> Navigating textures and mipmaps in the [Basic Image Viewer] is now possible using the arrow keys.<br>
+      <b>•</b> Added a clear button to the image viewer that allows clearing all images that were added.<br>
+      <b>•</b> Fixed a typo in the [Quick Guide] in the help menu (a line break was needed).<br>
+
+    <hr><h1>v26.1</h1><hr>
+      <b>•</b> Fix [Rescale Textures With New Scaling Factor] to actually be able to properly work with decimals.<br>
+      <b>•</b> Creating textures as ARGB_8888 now requires a valid path to TexConv (rather than Compressonator).<br>
+      <b>•</b> Updated various tooltips to make the options they explain more clear.<br>
+
+    <hr><h1>v26.0</h1><hr>
+      <b>•</b> Add full support for uncompressed DDS textures. Viewing and converting to other formats requires TexConv.<br>
+      <b>•</b> DDS textures can now be created as uncompressed ARGB_8888. This requires a valid path to Compressonator.<br>
+      <b>•</b> Added a new mipmap option named [Max Mipmap Levels] which allows forcing the number of mipmaps generated.<br>
+      <b>•</b> Fix forcing the PNG color type when upscaling textures using Point, Cubic, or Lancoz filters.<br>
+      <b>•</b> Mipmaps can now be automatically handled for non-Dolphin textures when [Allow All Images] is enabled. To create a
+        texture with custom mipmaps, simply supply the mipmap textures with the mip suffix (texture.png, texture_mip1.png,
+        texture_mip2.png, etc). If the option [Force Internal DDS Mipmaps] is checked, it will ignore included mipmaps and
+        generate new ones from the top level.<br>
+      <b>•</b> Allow navigating to the Texture and Output Paths by clicking on the groupbox header (if the paths exist).<br>
+      <b>•</b> The option Scan Textures for Issues has been renamed to [Scan Dolphin Textures For Issues].<br>
+      <b>•</b> The option Rescale Textures at Fixed Integer has been renamed to [Rescale Textures With New Scaling Factor]. This
+        option now allows rescaling images with a decimal, and I do not suggest doing this outside of special circumstances.
+        I needed to downscale a PC texture pack, and setting something like [0.50] effectively allows downscaling it by a %.<br>
+      <b>•</b> The option [BC7 Texture Viewer] has been renamed to [Basic Image Viewer] since it actually supports multiple formats.<br>
+
+    <hr><h1>v25.2</h1><hr>
+      <b>•</b> Force DDS dimensions into the nearest multiple of four to avoid D3D11 Dolphin crashes. Example: 129x129 > 132x132.<br>
+      <b>•</b> Do not allow the tool to attempt to select DDS Utilities to create DDS textures when it isn't installed.<br>
+      <b>•</b> Hide the BC7 option unless a valid path to TexConv is found. This is because Compressonator fails at creating some
+        textures (still not sure why), and TexConv is needed as a fallback path since it's the only other program for BC7.<br>
+
+    <hr><h1>v25.1</h1><hr>
+      <b>•</b> Fix setting the output path when converting/rescaling if a non-texture file was copied before a texture is created.<br>
+      <b>•</b> Added a work-around for Compressonator generating BC7 textures with bad headers, which Dolphin refuses to load.<br>
+
+    <hr><h1>v25.0</h1><hr>
+      <header>Texture Generation:</header><br>
+      <b>•</b> Creating DDS textures with custom mipmaps and extracting internal mipmaps is now done with my own methods rather
+        than relying on DDS Utilities. This removes DDS Utilties as a requirement to creating DDS textures.<br>
+      <b>•</b> Fully support all aspects of BC7 textures. All formats can be converted to BC7, and BC7 can be converted to almost
+        all other formats. BC7 textures can be created with dynamic internal mipmaps (different images); they can also be
+        extracted and are preserved when converting to other formats. While all my test cases (finally) passed, there still
+        may be issues with some textures. I made a LOT of guesses based on experiments that just happened to work.<br>
+      <b>•</b> The [DDS Generating Program] now works more as a preferred option than actually relying on that program to do all
+        the conversions. All other DDS programs will serve as a fallback to the one that was selected. I do suggest having
+        multiple programs if using Compressonator as it randomly fails at creating some images.<br>
+      <b>•</b> DDS images containing a DX10 header that are compressed with DXT1, DXT3, or DXT5 have their headers converted to the
+        older DX9 header (meaning the DX10 part of the header is stripped, and FourCC is set to the block compression type).
+        This happens automatically whenever a DDS image with a DX10 header is read. The reason I do not support DX10 headers
+        for these images directly is so they can be manipulated with tools that don't support it (like DDS Utilities). DX10
+        headers are supported for BC7 textures however, but only TexConv can manipulate them.<br>
+      <b>•</b> Also support processing DDS textures that are in DXT3 format. There really is never any reason to use this one, so I
+        never supported it in the script. In theory, it should have no issues so there's no reason not to add support.<br>
+      <b>•</b> Allow BC7 textures to work with the [Process Selected] option (this was actually really easy to implement).<br>
+      <b>•</b> When converting or rescaling textures to DDS format, also show the selected block compression type on the folder.<br>
+      <b>•</b> Removed the workaround to fix Ishiiruka DDS color textures that have a missing material map. Instead the texture is
+        now directly fixed. It was a bad flag (I think?) set in the header all along (bug in Ishiiruka Tool?).<br>
+      <b>•</b> Rewrote the entire texture generation logic (this took way too long). As always, please report any bugs!<br><br>
+
+      <header>Changes:</header><br>
+      <b>•</b> Moved TexConv further up the list in the paths menu since it is now far more relevant than it was.<br>
+      <b>•</b> Replace the option [DDS Mipmap Type] with a new option called [External DDS Mipmaps]. Generating DDS internal mipmaps
+        is now the default behavior of the script. External mipmaps can still be force generated by checking this option.<br>
+      <b>•</b> Report the amount of time it took to process the entire loop when running any option.<br>
+      <b>•</b> Removed the Advanced Option [Fix PNG Textures Potentially Broken by OptiPNG]. I think by now it's lost its use.<br>
+      <b>•</b> Added a [Default] color to the background colors. This defaults to [Black] on PS v2 and [DarkMagenta] on PS v3 and up.<br>
+      <b>•</b> Update various tooltips and help topics regarding BC7 textures.<br>
+      <b>•</b> New Advanced Option [BC7 Texture Viewer]. This does exactly what you might think it would do, and allows the viewing
+        of BC7 images. Decoding images can be slow (they are converted to PNG so they can be viewed), and it is suggested to
+        only use it to verify that BC7 images are being created correctly. Outside of that, it has little use.<br>
+      <b>•</b> Fixed several issues with GUI elements scaling badly when Windows DPI scaling is set to 125% size.<br><br>
+
+      <header>PowerShell v2.0 Fixes (Windows 7):</header><br>
+      <b>•</b> Default the background color to [Black]. I never realized [DarkMagenta] was so awful in Powershell v2.<br>
+      <b>•</b> The GUI will now scale properly in all instances. This came at the cost that the bottom right corner will give the
+        impression that all GUI windows can be resized, but the size of the windows are locked.<br>
+      <b>•</b> Fix detecting the [Spacebar] press to pause the script when it is actively performing an operation.<br>
+      <b>•</b> Fix the [Quick Help] button. Apparently I was using syntax that isn't supported until PowerShell v3.<br>
+      <b>•</b> Fix setting the PowerShell window icon. There was a space where there shouldn't have been, and v2 is picky.<br>
+      <b>•</b> Fix an error message that popped up when using the [Combine Multiple Textures] option.<br>
+
+    <hr><h1>v24.1</h1><hr>
+      <b>•</b> Fix an error that prevented the script from working in PowerShell v2.<br>
+
+    <hr><h1>v24.0</h1><hr>
+      <b>•</b> THIS IS AN EXPERIMENTAL FEATURE: Allow creating DDS textures with BC7 block compression. At the moment Dolphin does
+        not even support this compression format, so I can not test it. There may be issues that I don't know about. BC7
+        requires using either Compressonator or TexConv as the texture generation tool. BC7 has higher quality than DXT5, but
+        has the limitation that custom mipmaps cannot be used (at least with this tool). Hopefully this changes in the future.<br>
+      <b>•</b> DDS textures with DX10 headers are currently not supported. While they might work if they use DXT1/DXT5 compression,
+        I prefer to create a proper implementation that could potentially support processing BC7 textures in the future. When
+        attempting to process these textures, an error message is now displayed that says that it is in an unsupported format.<br>
+      <b>•</b> New option [Force Internal DDS Mipmaps] has been added to the Texture Options. This option becomes available when
+        'Allow All Images' is checked. When enabled, non-Dolphin images that are converted to DDS will have internal mipmaps
+        generated for them. This makes the script useful for texture projects outside of Dolphin (such as PC texture packs).<br>
+      <b>•</b> Upscaling textures with xBRZ can be annoying if many textures have an incorrect sRGB profile. A pop-up appears that
+        pauses the script until [OK] is pressed. Added a background process that watches for this window and automatically
+        presses Enter on it when running ScalerTest. This does not always work because Windows does not allow forcing tasks
+        to the front (it just blinks on the taskbar). For the best result, close all active windows and only run the script<br>
+      <b>•</b> Only display the DDS Creator tools that currently have a valid path set in the Paths menu. If the path to a tool is
+        updated while the script is running, the tool will be added to the dropdown box without having to restart the script.<br>
+      <b>•</b> The PowerShell Console and Help Dialog now have custom icons that match the CTT-PS main window.<br>
+      <b>•</b> Move the toggle for enabling/disabling the log file to the [Preferences] section.<br>
+      <b>•</b> Created better tooltips for both Compressonator and TexConv in the [Configure Paths] menu.<br>
+      <b>•</b> Removed [Force DXT5] option. It has been replaced with the dropdown box to select the compression format. The new
+        option allows the old behavior of DXT1/DXT5, DXT5 Only, or BC7 (which is not (yet?) used by Dolphin).<br>
+      <b>•</b> Removed the [Max Width/Height Upscale] options and internally use the largest possible selectable value of 32768.<br>
+      <b>•</b> Removed waifu2x-caffe model [UKBench]. It has not functioned for some time (maybe they dropped support?).<br>
+      <b>•</b> Fix a warning that appeared when optimizing textures with OptiPNG when the [Optimize In-Place] option is enabled.<br>
+      <b>•</b> Fix the (incorrect) message displayed when attempting to run the script and the ImageMagick install path isn't found.<br>
+      <b>•</b> Fix the position of the mipmap options. They needed a slight bump to the right by 2 pixels.<br>
+      <b>•</b> Fix a pause that happened that required a key press to continue when importing stored options.<br>
+
+    <hr><h1>v23.2</h1><hr>
+      <b>•</b> Allow paths with apostrophes for the Texture and Output paths. I think I blocked these for the wrong reason. The
+        script defaults the Texture path to its current location. If the script is in a path with an apostrophe, it will not
+        even load up. So as a fail safe, I probably mistakenly blocked the texture/output paths from having an apostrophe
+        altogether. Once the script is loaded, apostrophes will no longer fail, so there is no reason to block them.<br>
+      <b>•</b> Add ImageMagick to the list of programs that can generate DDS textures. It is not suggested to use ImageMagick as
+        it creates low quality DDS images. I mostly added it to run some tests with it, then decided to just leave it there.<br>
+      <b>•</b> Fix the appearance of the final message for options that display texture counts (repaired, optimized, etc.).<br>
+
+    <hr><h1>v23.1</h1><hr>
+      <b>•</b> Compressonator seems to randomly fail at some images, and I'm not sure why. Add a fallback to DDS Utilities if the
+        image was not created, which will fallback to ImageMagick if for some reason that fails too. Before the script would
+        only fallback if special conditions were met, now it will only fallback if the image fails to be created.<br>
+      <b>•</b> Only update the path to Compressonator on exit if the path was manually forced. This prevents the line that pulls
+        the value from the registry from being overwritten if the user presses the [Restore Defaults] button.<br>
+      <b>•</b> Default the waifu2x model to the higher quality version of [anime style art]. I meant to do this before but forgot.<br>
+
+    <hr><h1>v23.0</h1><hr>
+      <header>New Stuff:</header><br>
+      <b>•</b> Added support for two more DDS generating programs: AMD Compressonator and Microsoft DirecXTex TexConv. While DDS
+        Utilities creates nice DXT5 textures, it creates lesser quality DXT1 textures. Compressonator creates higher quality
+        textures overall, for both DXT1 and DXT5. TexConv creates worse quality textures than both programs, but is much
+        faster than the other two. A dropdown box has been added to the options menu select which program to use.<br>
+      <b>•</b> Overhauled the [Options] menu and split it into 3 categories: Texture Options, Mipmap Options, and CTT-PS options.
+        Added a button to the bottom of the options menu to configure the paths to tools and the temporary folder.<br>
+      <b>•</b> Calculate sharpening values instead of using fixed values when textures are resized or when mipmaps are created.
+        This has the potential to create higher quality textures when they are rescaled and create higher quality mipmaps.<br>
+      <b>•</b> Missing lower mipmap levels are now generated from the lowest mipmap found in the provided mipmap chain, instead
+        of always using the base texture. This preserves the intended mipmap effect if the pack provides dynamic mipmaps.<br>
+      <b>•</b> New Mipmap Option [Create Missing From Top Level]. This restores the old behavior of using the base texture to
+        generate missing mipmap levels. This option is not suggested for general use, as this behavior was always wrong.<br>
+      <b>•</b> New Advanced Option [Extract DDS Internal Mipmaps]. This does exactly what it's title denotes and has little use.
+        Extracted textures are created directly in the texture pack. This operation can not be undone, so make back ups!<br>
+      <b>•</b> Add an option to change the background color of the PowerShell console. There are seven colors available to choose
+        from: DarkMagenta (Default), Black, DarkBlue, DarkGreen, DarkCyan, DarkRed, and DarkGray.<br>
+      <b>•</b> Help dialog now has icons similar to CHM files. This should make it somewhat easier on the eyes.<br><br>
+
+      <header>Changes:</header><br>
+      <b>•</b> Starting with Dolphin v5.0-3506, DDS internal mipmaps are now supported! Internal is now the default mipmap type,
+        and External is still an option. The Both setting remains, but it's no longer suggested to create both types.<br>
+      <b>•</b> Remove mipmap options [Force New Mipmaps] and [DDS Mipmap Type] from the options they were found in. These options
+        can now be found on the main Options menu in the [Mipmap Options] group, and affect all operations globally.<br>
+      <b>•</b> Remove [Material Format] from the Global Options. DDS color textures created with Ishiiruka Tool now directly work
+        with Dolphin and no longer need converted. Dolphin is still not compatible with material maps however.<br>
+      <b>•</b> GUI text boxes that represent paths can now be manually edited. The path to the corresponding tool must succeed.<br>
+      <b>•</b> Rename Standard/Advanced [Description] button to [Quick Help] to better represent what the button actually does.<br>
+      <b>•</b> Switch the order of [Convert Textures to Another Format] and [Rescale Textures at Fixed Integer]. I've wanted to
+        do this for a while, but didn't feel like putting in the time. It makes more sense to me that the option to convert
+        textures comes before rescale since both options essentially [convert], and rescale offers even more options.<br>
+      <b>•</b> Change [Auto-Rename Output] options to check boxes, and default the text to the last folder found in [Texture Path].
+        Also allow spaces in the text box, and add a [-] button to the right of the text box that clears the current text.<br>
+      <b>•</b> Rename rescaling option Allowed Scaling to [Rescale Condition], and rename the All selection to [Always].<br>
+      <b>•</b> Remove the [Existing] choice from the rescale textures at fixed integer [Rescale Format] menu. After giving it some
+        thought, I believe that all textures in the same pack should be created with the the same image format.<br>
+      <b>•</b> Change [Seamless Crop %] to use integers instead of decimals to represent the percentage to crop before upscaling.<br>
+      <b>•</b> Change default value for Waifu2x-Caffe noise reduction to 2 (so it matches CPP and allows me to remove some checks).<br>
+      <b>•</b> Reworked GUI option for [Split Combined Multi-Texture]. Loading a CTT file will now make it impossible to alter
+        other options while it is loaded. The same button to load a CTT File can also be used to release it.<br>
+      <b>•</b> Restructured the [Help] dialog and added in all the most recent changes and additions to the available options.<br><br>
+
+      <header>Bug Fixes:</header><br>
+      <b>•</b> Fix several issues with DDS mipmap generation. External mipmaps were created in multiples of four, but now mipmaps
+        will match the dimensions of PNG/JPG (something like 3x3 is possible). Internal mipmaps were being created with the
+        correct dimensions, but an extra 1x1 mipmap was generated if the texture has strange dimensions (like 704x704).<br>
+      <b>•</b> Fix broken logic when applying the seamless method using [All] when upscaling textures with alpha pixels. The
+        short version is: the seamless method was not being applied to textures with alpha pixels even when set to [All].<br>
+      <b>•</b> Fix a rare issue where generated Ishiiruka color textures could be created with the wrong dimensions.<br>
+      <b>•</b> Fix generating a watermark on Ishiiruka color textures that are smaller than 256 pixels in width. This was not in
+        any way related to the issue that was fixed above (although it helped me to find that particular issue).<br>
+      <b>•</b> Fix Waifu2x model/OpenCL options from appearing on other upscaling filter menus when selecting the path to Waifu2x.<br>
+      <b>•</b> Fix reporting some stuff to the console and log when textures are skipped when optimizing with OptiPNG.<br>
+      <b>•</b> Fix [Combine Multiple Textures] to remember selected textures when changing the 'Standard' or 'Advanced' option.<br>
+      <b>•</b> Fix [Split Combined Multi-Texture] to remember all information when changing the 'Standard' or 'Advanced' option.<br>
+      <b>•</b> Fix [Process Selected] button to be able to choose DDS/JPG images, although I highly suggest drag and dropping. The
+        reason is that .NET Framework Open File dialogs only allow selecting a single type of file at a time, and other files
+        can only be selected by selecting the [type] from the drop down menu. This also happens in the waifu2x selection menu.<br>
+      <b>•</b> Fix GUI popping up for a split second when forcing a running script closed with [Alt+F4] or [Control+C].<br>
+      <b>•</b> Fix the repair message for [Auto-Repair Dimensions] when using [Convert Textures to Another Format].<br>
+      <b>•</b> Tons of code refactoring, tons of rewriting, tons of new stuff. I expect many new bugs to pop up from this!<br>
+
+    <hr><h1>v22.2</h1><hr>
+      <b>•</b> Fix adding images to the Process Selected menu (hold Control when pressing Start) and the Combine/Split options.
+        I must have done something that I thought would work that I never tested. Obviously it didn't work and broke stuff.<br>
+
+    <hr><h1>v22.1</h1><hr>
+      <b>•</b> When applying upscaling filters with ImageMagick (Point/Cubic/Lancoz), force PNG output to 8bpp.<br>
+
+    <hr><h1>v22.0</h1><hr>
+      <b>•</b> If ImageMagick was not found when pressing [Start], display a warning dialog and do not start the loop.<br>
+      <b>•</b> Remove the [Word Wrap] option from watermarking textures. The name will now always be word wrapped.<br>
+      <b>•</b> Fix [Process Selected] to not also run on the generated previews when adding DDS textures.<br>
+      <b>•</b> Also fix the option to properly remove temporary DDS previews if the option was cancelled with the [X] button.<br>
+      <b>•</b> Display the icon used for CTT-PS on the Process Selected, Pause, and Yes/No dialogs.<br>
+      <b>•</b> Turn most [ERROR] messages into [Warning] messages since most of them were not technically an error.<br>
+      <b>•</b> When [Material Map Format] is set to Dolphin, and trying to convert a [_lum] color texture, show a Notice that
+        says why the texture failed rather than a Powershell error. The 'failed to create' warning will still show.<br>
+      <b>•</b> Code: Various small optimizations, remove dead code, and rewrite most function calls to be more 'Powershelly'.<br>
+
+    <hr><h1>v21.3</h1><hr>
+      <b>•</b> When rescaling textures, fix scale output with an integer instead of a decimal when [Allowed Scaling] is changed.<br>
+      <b>•</b> Slightly change the log output of [Status] when optimizing textures with OptiPNG.<br>
+      <b>•</b> Catch pressing 'Control+C' and 'Alt+F4' when the loop is running and cleanly exit the Powershell console.<br>
+      <b>•</b> Allow pressing 'Space' to pause the main loop and show a small GUI window to allow resuming it.<br>
+
+    <hr><h1>v21.2</h1><hr>
+      <b>•</b> Fix changing the output format when rescaling or converting that I broke with the last fix.<br>
+
+    <hr><h1>v21.1</h1><hr>
+      <b>•</b> Fix changing the Material Map Format that's been broken since v13. How shameful I didn't catch this sooner.<br>
+
+    <hr><h1>v21.0</h1><hr>
+      <b>•</b> Added a few workarounds for dialogs when windows scaling is set to 125%. Setting to 150%+ will still look strange
+        on some menus, which can look different depending on the operating system. All elements are now visible however.<br>
+      <b>•</b> Add [Force DDS DXT5] to the [Global Options] group on the Options panel. This forces DXT5 when creating DDS textures.<br>
+      <b>•</b> Remove redundant check an for alpha channel that further speeds up processing DDS textures (not so much for PNG).<br>
+      <b>•</b> Rename Disable Stored Options to [Enable Stored Options] and move it to the [CTT-PS Options] group. Obviously now
+        that it has been renamed, it does the opposite of what it did before. This is because all CTT-PS options should have
+        [enabled] as the default and all [Global Options] disabled as the default to avoid initial confusion.<br>
+      <b>•</b> Remove all references to [Script Mode] since it has been long destroyed.<br>
+      <b>•</b> Update the built-in help dialog with all recent changes and additions.<br>
+      <b>•</b> Code indentation is now 2 spaces rather than a tab. No I did not do this manually (for the most part).<br>
+
+    <hr><h1>v20.1</h1><hr>
+      <b>•</b> Revert all that crap for DPI settings. Fix the actual bug causing the tool to not scale properly. It will still
+        have issues at 125% (which might be somewhat fixed later), but 150% and up should work properly.<br>
+
+    <hr><h1>v20.0</h1><hr>
+      <b>•</b> Add a terrible work-around for monitor DPI settings from 125%-200%. Any higher will not work at all.<br>
+      <b>•</b> Holding Control while pressing Start will now allow selecting individual textures to process. This small and simple
+        menu allows dragging and dropping images or manually selecting them from a path. The currently selected option is used
+        when processing textures, and the results will be generated in the output path in a [-SelectedTextures-] folder. The
+        output path can be temporarily changed for this option only, and is set back to what it was when processing is done.<br>
+      <b>•</b> Even more code optimizations and refactoring which should bring a tiny bit more speed.<br>
+      <b>•</b> Fix generating a black texture using the watermark option when a material map is found but Ishiiruka tool was not.<br>
+      <b>•</b> Fix copying an Ishiiruka DDS color texture missing a material map as [corrupt] if it failed to be repaired.<br>
+      <b>•</b> Fix some issues when analysing DDS external lower mipmap levels.<br>
+
+    <hr><h1>v19.0</h1><hr>
+      <b>•</b> Enormous speed-up when analyzing PNG files. As the script became more complex, more uses of ImageMagick [identify"
+        were needed to check texture attributes. Some of these attributes can be pulled from the header which is much faster.<br>
+      <b>•</b> Validate PNG/DDS textures by checking the first 8 bytes of the header rather than my previous mess. This will fail
+        if the image has a corrupted header, which is what I intend. It will not catch all cases of image corruption however.<br>
+      <b>•</b> New methods for testing images for an alpha channel, and testing whether or not the image has transparency.<br>
+      <b>•</b> Tons of little changes that helped speed, that has no user impact, that I forgot to write down.<br>
+
+    <hr><h1>v18.1</h1><hr>
+      <b>•</b> Read PNG and DDS dimensions from the image headers rather than the convoluted mess I was using.<br>
+      <b>•</b> Fix texture count including textures that were not Dolphin textures when [Allow All Images] is disabled.<br>
+
+    <hr><h1>v18.0</h1><hr>
+      <b>•</b> Force output of PNG color type depending on input image. 0-Gray, 4-GrayA, 2-RGB, or 6-RGBA. This prevents textures
+        from being output as (3-Indexed) which has the chance to not work in Dolphin for some reason.<br>
+      <b>•</b> When scanning textures for issues, and repair and/or copy is checked, log if the texture was repaired or copied.<br>
+      <b>•</b> When converting to PNG, also report the depth and color space the texture was converted to (Ex: 32-Bit RGBA).<br>
+      <b>•</b> When rescaling textures, show the converted format, color type (PNG), and compression (DDS) in the console and log.<br>
+      <b>•</b> When optimizing a texture with OptiPNG is auto-skipped because a channel is less than 8bpp, report the channel.<br>
+      <b>•</b> When fixing texures potentially broken by OptiPNG, skip Ishiiruka textures (textures with material maps).<br>
+      <b>•</b> PNG grayscale images with RGB color space will now be converted with grayscale color space (if possible).<br>
+      <b>•</b> Fix detection of alpha channel in grayscale textures. This was always being detected as [true].<br>
+      <b>•</b> Add a new CTT-PS option [More Console Colors] which enables additional colored text in the PowerShell console.<br>
+      <b>•</b> Implement a new method for the check/repair for DDS Ishiiruka color textures that have a missing material map that
+        happens during texture validation. The old method broke after implementing the new method for getting dimensions.<br>
+      <b>•</b> Only create the [CTT_Generated] folder if an option specifically outputs textures to that folder.<br>
+
+    <hr><h1>v17.1</h1><hr>
+      <b>•</b> Fix some textures coming out completely transparent when using [Repair Textures Potentially Broken By OptiPNG].<br>
+      <b>•</b> Also fix the output of textures to not have an alpha channel if they do not contain any transparent pixels.<br>
+
+    <hr><h1>v17.0</h1><hr>
+      <b>•</b> Remove [Script Mode], meaning the old text based menus. The GUI is superior, and cleaned out 3K+ lines of code.<br>
+      <b>•</b> Remove the [GUI Enabled] option since there is now only a GUI.<br>
+      <b>•</b> Move the [Help] button to where the [Script Mode] button used to be.<br>
+      <b>•</b> Add a [Description] button to where the Help button used to be. This button opens the [Help] menu and automatically
+        selects the topic that matches the currently selected Standard or Advanced Option.<br>
+      <b>•</b> Rework OptiPNG yet again. It appears indexed textures can have issues with Dolphin, so CTT-PS will not allow OptiPNG
+        to run on indexed textures and it will not allow the results to become indexed. Also fix an issue where OptiPNG was
+        NOT being blocked when the test for less than 8-bit depth failed on any color channel. I suggest testing your packs!<br>
+      <b>•</b> Rework OptiPNG Repair advanced option. It will now also convert indexed textures back into RGB.<br>
+      <b>•</b> Add the [Hide OK Textures] checkbox to all Advanced Options that make use of it.<br>
+      <b>•</b> New method for retrieving dimensions which works with DDS textures, which is much faster than ImageMagick. This
+        provides a significant speed-up when working with DDS textures. If this fails, it falls back to the old methods.<br>
+      <b>•</b> Hide the console window when shutting down the script. In my Windows 7 VM, I noticed it took 6-10 seconds to update
+        all options. This could be the VM being slow, or it's Windows 7 that is slow. Whatever, hide the Powershell console
+        until options are properly updated and the script closes properly. This way the user won't force close the PS window.<br>
+      <b>•</b> Fix toggling the console window on/off when checking/unchecking the [Always Show Console] option.<br>
+      <b>•</b> Prevent all files included with CTT-PS from being copied when checking [Copy Non-Texture Files].<br>
+
+    <hr><h1>v16.0</h1><hr>
+      <b>•</b> Counting textures before processing the main loop is over 300% faster than before (seriously, I benchmarked it).<br>
+      <b>•</b> When applying upscaling filters, force generating lower mipmap levels for mipmap (m) textures. Apparently this was
+        already being done for DDS textures because of the way I created them, but not for PNG and JPG textures.<br>
+      <b>•</b> Updated the appearance of the header in the log file. The selected master option is now separate from sub-options.<br>
+      <b>•</b> Fix the label of Scale-Fix Threshold not toggling disabled status when checking [Attempt Repairs].<br>
+      <b>•</b> Fix copying non-texture files that may contain [tex1] prefix. This has been an issue since this tools conception
+        dating back to the batch versions. Some users may have PSD/XCF files they want copied into the generated pack.<br>
+      <b>•</b> Also allow copying batch scripts when [Copy Non-Texture Files] is selected. Not sure why I blocked it.<br>
+      <b>•</b> When scanning textures for issues, DDS Ishiiruka textures that include a material map that have missing internal
+        or external mipmaps will no longer be detected as an issue if the Mipmap type is set to [External] or [Both].<br>
+      <b>•</b> Increase default of Aspect-Fix Threshold to 0.05 so more textures with minor aspect differences are repaired.<br>
+      <b>•</b> Load PNG/JPG images using .NET instead of COM to retrieve dimensions. I have no idea if this will fix any false
+        positives detecting corruption (or create new issues), so please report if this has any obvious negative side effects.<br>
+      <b>•</b> Massive code clean-up. As a side effect, a few [bugs] may have been fixed (or maybe new ones introduced :P).<br>
+
+    <hr><h1>v15.1</h1><hr>
+      <b>•</b> Fix applying an upscaling filter to textures that are not using the [Seamless Method].<br>
+
+    <hr><h1>v15.0</h1><hr>
+      <b>•</b> The X button on the PowerShell window can no longer be clicked. Close it using the GUI's X or Exit button.<br>
+      <b>•</b> Add a checkbox next to the Texture and Output paths that allows saving these paths when the script is closed.<br>
+      <b>•</b> Allow selecting the upscale model for waifu2x-caffe when using [Apply Upscaling Filter to All Textures].<br>
+      <b>•</b> Fix even more issues with commas as decimals. This prevented textures from being repaired correctly, and the GUI's
+        numeric up/downs were not setting and saving the values properly when dealing with comma based decimal values.<br>
+      <b>•</b> Fix an error message when attempting to set the console window position when running multiple instances of CTT-PS.
+        Running multiple instances should NEVER be done, but I'm running out of bugs and this annoys me while developing.<br>
+      <b>•</b> Play the windows chime when the Yes/No dialog pops up when cancelling a process or pressing [Restore Defaults].<br>
+      <b>•</b> Lots of code refactoring, the stuff nobody cares about and probably leads to new bugs popping up.<br>
+
+    <hr><h1>v14.0</h1><hr>
+      <b>•</b> Fix texture count of the number of processed files when dealing with (.mat) material maps.<br>
+      <b>•</b> Fix a bug when generating material map '_lum' textures into a path that already contains these '_lum' textures.<br>
+      <b>•</b> Fix a bug with [Restore Defaults] setting a bad value for noise reduction when a valid path points to Waifu2x-CPP.<br>
+      <b>•</b> Add a confirmation (yes/no) dialog when pressing the [Restore Defaults] button.<br>
+      <b>•</b> When using [Auto-Repair Dimensions] while converting textures, alert which textures were auto-repaired and log it.<br>
+      <b>•</b> Update the tooltips for waifu2x [Disable GPU] and [Enable OpenCL] to better explain their functions.<br>
+      <b>•</b> Do not allow enabling both [Disable GPU] and [Enable OpenCL] at the same time if using Waifu2x-CPP.<br>
+      <b>•</b> Rename GUI [Internal Options] to [Global Options] so their purpose is less ambiguous.<br>
+      <b>•</b> Slightly adjust the [Auto-Rename] box under the [Convert Textures] option to better line up with the other options.<br>
+
+    <hr><h1>v13.0</h1><hr>
+      <b>•</b> Rename [DDS Material Format] to [Material Map Format] as it actually does affect PNG materials as well. Also update
+        all information on this option to better explain what it actually does in its entirety.<br>
+      <b>•</b> On the Scan Textures GUI menu, also disable [Force New Mipmaps] if [Attempt Repairs] isn't checked.<br>
+      <b>•</b> Also move DDS Mipmap Type to the top of the right hand column. The reason is this option is used to know which type
+        of DDS Mipmaps to scan for, so it cannot be disabled if 'Attempt Repairs' isn't checked (which would create a weird gap).<br>
+      <b>•</b> Allow drag/drop tool executables (or paths to the executables) into the corresponding text box on the Options panel.<br>
+      <b>•</b> Watermark [Text Length] is forced to 6 if it's anything lesser (aside from 0 which means to use the entire name).<br>
+      <b>•</b> Fix tooltip for [Output Format] when [Converting Textures] to not read as the [Manual Rescale] tip. Broke in v11.0.<br>
+      <b>•</b> Reverse order of [DDS Mipmap Type] and [Force New Mipmaps] in the advanced option [Generate New Mipmaps].<br>
+      <b>•</b> Reworded several of the GUI tooltips and fixed various typos in all kinds of places.<br>
+      <b>•</b> Updated the CTT-PS Help document to reflect changes made since v12.0, and reworded some of the information.<br>
+      <b>•</b> Code: Phase out and remove the [CopyAllScreenText] function as it is now broken in the latest version of PowerShell.
+        This function was only used in the script menus and is no longer needed. All script menus are no longer [progressive].<br>
+      <b>•</b> Three new secrets have been hidden in some very non-obvious locations. Good luck finding them!<br>
+
+    <hr><h1>v12.2</h1><hr>
+      <b>•</b> Fix changing values with numeric up/downs (such as rescale factors).<br>
+
+    <hr><h1>v12.1</h1><hr>
+      <b>•</b> Fix saving the filter selection in GUI mode. What an embarrassing bug to release with.<br>
+      <b>•</b> Fix saving the selected font/background color in the GUI Watermark menu.<br>
+      <b>•</b> Fix updating the Scale-Threshold on both menus when it's changed on either menu.<br>
+      <b>•</b> Slightly rework the logic behind checkbox states to not be so stupid.<br>
+
+    <hr><h1>v12.0</h1><hr>
+      <header>General Changes:</header><br>
+      <b>•</b> All stored options are now written to the script when it is closed, rather than updating it whenever an option was
+        changed. THIS WILL NOT WORK IF THE POWERSHELL WINDOW IS CLOSED. The script must be exited from the GUI by pressing
+        the [Exit] button or the [X] button in the corner. If in Script Mode, it must be closed from the main menu.<br>
+      <b>•</b> Rewrote the way options are imported with [Import Stored Options]. The new method should be slightly faster.<br>
+      <b>•</b> Added restoring all options to their default values. This can be done with a button on the GUI Options panel, or
+        from the Internal Options menu while in Script Mode. Note that paths are not restored to their default values.<br><br>
+
+      <header>GUI Changes:</header><br>
+      <b>•</b> Allow dragging and dropping a folder into the [Texture] and [Output] paths text box.<br>
+      <b>•</b> Fix selecting a color when using the option [Add Identifying Watermark to All Textures].<br>
+      <b>•</b> It is now possible to disable storing options with a checkbox found in the [Options] menu.<br>
+      <b>•</b> The script will now remember the last selected standard and advanced option when it is closed and reopened.<br>
+      <b>•</b> Enable the [Minimize] box on the GUI main window which allows minimizing CTT-PS GUI to the taskbar.<br>
+      <b>•</b> Gray out (disable) options that are not used unless other options are enabled (ex: Scale/Aspect requires [Repair]).<br>
+      <b>•</b> Added an [Internal Option] to toggle forcing CTT-PS GUI over top of all other open windows.<br>
+      <b>•</b> Reversed the order of [Auto-Repair Dimensions] and [Scale-Fix Threshold] in the option [Convert Textures to Another
+        Format]. This made more sense to me because Scale-Fix does not do anything unless Auto-Repair is enabled.<br>
+
+    <hr><h1>v11.0</h1><hr>
+      <header>General Changes:</header><br>
+      <b>•</b> Ishiiruka Tool v0.9.6 is now required for working with material maps. Support for the new naming format (.mat) and
+        emissive (.lum/_lum) has been added. The old format (.nrm) is still detected as well, but no longer created. This
+        version relies on v0.9.6 behavior as it works around a few bugs, so if Ishiiruka Tool is updated the script may also
+        need to be updated to reflect any changes that fixes the bugs I've worked around.<br>
+      <b>•</b> When creating material maps (.mat) from materials (bump/spec/nrm/lum), it will now report the actual materials used.<br>
+      <b>•</b> It is now possible to apply upscaling filters to DDS textures. Note this will take longer than PNG/JPG textures.<br>
+      <b>•</b> Silenced any error messages that appear during the main loop if a file no longer exists that the loop detected.<br>
+      <b>•</b> Fixed a serious issue with [Generate New Mipmaps] that would delete DDS textures if DDS Utilities was not found.<br>
+      <b>•</b> Advanced Option [Generate New Mipmaps] now preserves dynamic mipmaps and is now affected by [Force New Mipmaps].
+        The old behavior of this option did not preserve dynamic mipmaps and always forced new mipmaps from the top layer.<br>
+      <b>•</b> Fixed DDS Mipmap Type when using the option [Generate New Mipmaps"; 'External' didn't replace 'Internal' mipmaps.<br>
+      <b>•</b> The Advanced Option [Remove Invalid Mipmaps] can now also remove invalid internal mipmaps from DDS textures.<br>
+      <b>•</b> [Material Conversion] renamed to [DDS Material Format] since it only ever and always will affect only DDS materials.<br>
+      <b>•</b> [Remove Invalid Mipmaps From the Pack] option renamed to the simpler [Remove Invalid Mipmaps].<br>
+      <b>•</b> [Remove Alpha Channel From Non-Transparent Textures] option renamed to [Remove Alpha Channel From Opaque Textures].<br>
+      <b>•</b> The maximum rows and columns for the texture array (used in Combine/Split options) has been reduced to 18 (from 24).<br>
+      <b>•</b> The texture array values (rows/columns) and texture output name (Split option) are now saved with the script.<br><br>
+
+      <header>GUI Changes:</header><br>
+      <b>•</b> The main GUI dialog is no longer forced over top of all other open windows.<br>
+      <b>•</b> Added an option to auto-rename the output folder when rescaling or converting textures.<br>
+      <b>•</b> [Combine Multiple Textures] and [Split Combined Multi-Texture] are now implemented in the GUI.<br>
+      <b>•</b> The [Help] button is now functional. This opens up a dialog that mimics the style of Compiled HTML Help (CHM) files.<br>
+        This dialog covers enough topics and is thorough enough that it has completely replaced the [ReadMe] file and all the
+        included CTT-PS guides. The dialog can be opened while simultaneously browsing through the options of CTT-PS.<br>
+      <b>•</b> The texture selection GUI for [Combine Multiple Textures] has been completely overhauled. It will now show a preview
+        of the selected image in the selection button. The buttons are also now set up as a grid to easily verify that the final
+        texture that will be created is correctly assembled. Dragging and dropping images onto the buttons is also possible.
+      <b>•</b> The [Default Path] will now be remembered from the last selected texture when using [Combine Multiple Textures].<br>
+      <b>•</b> Fixed the offset of some of the [...] buttons that are found next to the various [*Path] options.<br>
+      <b>•</b> Fixed the console to report the correct path (instead of the script's path) when processing textures in GUI mode.<br>
+      <b>•</b> Fixed [Create Material Maps With Ishiiruka Tool] to search for Ishiiruka Tool instead of OptiPNG when starting.<br>
+      <b>•</b> Added the [Force New Mipmaps] and [DDS Mipmap Type] options to the Advanced Option [Generate New Mipmaps].<br>
+      <b>•</b> Formatted all tooltips to be horizontally shorter so there is less chance they run off the screen.<br>
+      <b>•</b> Added several more tooltips to some of the buttons and other elements that were missing them.<br><br>
+
+      <header>Special Changes:</header><br>
+      <b>•</b> Automatically attempt to position the PowerShell console window to the center of the user's screen. This will not
+        work on Windows 7 with PowerShell v2, update PowerShell to v5.0 if you want this feature. This works by calculating
+        the position based on the primary monitor's resolution. The PowerShell console should always open on the primary
+        display. I can't guarantee it will always show up on the primary display so this method may have the chance to fail.
+        This can be disabled by editing the script and changing [AutoCenterConsole] to $false as its not exposed on the GUI.<br>
+      <b>•</b> The [PS.Double.Click] registry mod is now built into the script and has been added to the GUI as an Internal Option.<br>
+      <b>•</b> Added an Internal Option do hide the PowerShell console while not in use, and show it while textures are processed.<br>
+      <b>•</b> CTT-PS will now start without ImageMagick installed. This does not mean the script is usable without it. When any
+        option is ran, the same prompt that appeared at start-up in older versions will appear in the console window and alert
+        the user ImageMagick was not found, offer a web page link, and also provide the ability to select the install folder.<br>
+      <b>•</b> Allow cancelling the current process using the [Escape] key. The loop will be interrupted when the operation being
+        performed on the current texture is finished. If rescaling/converting/upscaling, this may take a few seconds. This is
+        preferred over just clicking the [x] in the PowerShell console as this method will cleanly exit the loop and wipe out
+        any partial packs that were created from this script (Example: Converting to DDS, ConvertedTextures is deleted). This
+        feature does not work when using [Combine Multiple Textures] or [Split Combined Multi-Texture] options.<br>
+      <b>•</b> Added notice messages for several cases where DDS Utilities is required rather than having PowerShell spit out error
+        messages that means nothing to the user. This includes creating DDS textures and checking/extracting internal mipmaps.<br>
+
+    <hr><h1>v10.0</h1><hr>
+      <b>•</b> A proper fix has been included for Windows 7/PowerShell v2 Open File and Open Folder dialog issues. This means that
+        Windows 7 users will be able to select folders via a GUI for the first time, and the Open File menu will be correct.<br>
+      <b>•</b> The script now has a GUI built with .NET framework. [Mostly] all features of the text based menus are implemented.<br>
+      <b>•</b> Text based menus still exist, simply press the [Script Mode] button to switch to the PowerShell console.<br>
+      <b>•</b> It's also possible to switch back to the GUI with the option [Switch to GUI Mode] from the main menu.<br>
+      <b>•</b> Defaulting to GUI can be enabled/disabled with the [Options] tab on the GUI, or the [Internal Options] in script mode.<br>
+      <b>•</b> Input and Output paths can be selected with the GUI. The text based menus will still use the folder the script is in.<br>
+      <b>•</b> Advanced Options [In-Place] for OptiPNG and Material Maps are now part of the [Standard Options] while using the GUI.<br>
+      <b>•</b> All folders this script generates will now be located in a folder named [~CTT_Generated] in the output folder.<br>
+      <b>•</b> It is now possible to disable creating the log file within the GUI [Options] or the script's [Internal Options].<br>
+      <b>•</b> The Internal Option [Material Map Format] has been renamed to [Material Conversion] to better exemplify its purpose.<br>
+
+    <hr><h1>v9.7</h1><hr>
+      <b>•</b> Added a GUI for selecting textures in the [Combine Multiple Textures] option. This method should work in most cases
+        but is far from perfect. If the array contains more than 128 textures then the entire button array will not fit on the
+        screen. This shouldn't be a problem because I doubt any game will come close to having a texture grid of 128+ textures.<br>
+      <b>•</b> If textures were selected and rows or columns was updated, remember the textures that were selected.<br>
+      <b>•</b> Fix a bug that wiped out the current texture when attempting to re-select a texture, but no texture was selected.<br>
+
+    <hr><h1>v9.6</h1><hr>
+      <b>•</b> Added 2 new Advanced Options: [Combine Multiple Textures] and [Split Combined Multi-Texture]. The first option allows
+        selecting multiple textures to combine into a single image. Using this option will generated a (.ctt) file along with
+        the texture that can be used in the latter option to split the texture. It is not necessary to use this file to split
+        textures, as the number of textures created are calculated from the number of rows and columns selected by the user.<br>
+
+    <hr><h1>v9.5</h1><hr>
+      <b>•</b> Fix updating the script when selecting an output format when rescaling textures.<br>
+      <b>•</b> Added configuration menus for the [Scan Textures For Issues] and [Convert Textures to Another Format] options.<br>
+      <b>•</b> Moved [Hide Okay Textures], [Ignore Duplicates], and [Allow NotHD Textures] from the Internal Options to the new
+        menu for [Scan Textures For Issues]. Also moved [Copy Non-Textures] to the new menus for [Rescale] and [Convert].<br>
+      <b>•</b> DDS Auto-Repair is now just [Auto-Repair] and can be found on the new configuration menu for Option 3. This will
+        now automatically repair dimensions for all textures instead of just DDS textures using the integer part of the scale.<br>
+      <b>•</b> When error checking DDS textures, the script will no longer report missing mipmaps if there is less than 5 missing
+        mipmaps. The reason for this is my calculations that search down to 1x1 conflicts with the number of mipmaps that
+        ImageMagick creates, and it conflicts with the number of mipmaps Tino generates with Ishiiruka Tool. There should never
+        be more than 5 missing mipmaps if the texture was created properly, so this is the only compromise I can come up with.<br>
+      <b>•</b> Don't copy a useless [nvdxt_scratch.tmp] if it's somehow left over when creating DDS textures. Usually this file can
+        only keep existing if the script was closed while converting textures to DDS, otherwise it's automatically removed.<br>
+
+    <hr><h1>v9.4</h1><hr>
+      <b>•</b> Fix texture counts again. I forgot to consider PNG material maps with mipmap levels.<br>
+
+    <hr><h1>v9.3</h1><hr>
+      <b>•</b> Material maps will no longer be calculated into the texture count shown on the title bar. The reason for this is
+        like mipmaps, they are a supplement texture and do not have any actions applied to them individually.<br>
+      <b>•</b> Added a configuration menu for the [Rescale Textures at Fixed Integer] option.<br>
+      <b>•</b> Moved the Internal Option [Manual Rescale] to the new rescale textures menu.<br>
+      <b>•</b> When a texture is skipped using [Manual Rescale] it is no longer copied. I used to do this because I didn't want
+        the script to create [incomplete] packs, but this option should not be used to create complete packs.<br>
+      <b>•</b> A new option has been added when rescaling textures to configure when textures will be upscaled/downscaled.<br>
+      <b>•</b> Fixed a bug that was introduced in v9.2 when importing Internal Options that affected the [Waifu2x Conversion Mode].<br>
+      <b>•</b> Updated the ReadMe so it's appearance is consistent across all browsers (Internet Explorer, Firefox, Chrome, Edge).<br>
+
+    <hr><h1>v9.2</h1><hr>
+      <b>•</b> Fix the texture counts in the title bar when [Allow All Images] is enabled in the Internal Options.<br>
+      <b>•</b> Fix double backslash bug when selecting a new Temp Folder that contains only the root of a directory (ex: [C:\").<br>
+      <b>•</b> Display the [Add Identifying Watermark] menu on it's own page instead of using a progressive menu.<br>
+      <b>•</b> Allow selecting the type of textures to apply the seamless method to, and allow disabling it altogether.<br>
+      <b>•</b> Reduce the crop value of the seamless method back to 90%, and make the value configurable in the filters menu.<br>
+      <b>•</b> Impose the limits of the selected filter, and display these limits on the menu. xBRZ for example can only upscale by
+        a factor of 6x. Also hide specific waifu2x options that do not work with the selected version of waifu2x.<br>
+      <b>•</b> Fix the input value that is fed to waifu2x-caffe when setting the [Disable GPU] option to [true].<br>
+      <b>•</b> When waifu2x is selected as the current filter, display the version that was selected in the Internal Options.<br>
+      <b>•</b> When using waifu2x-Caffe, allow selecting the model that is used when upscaling.<br>
+      <b>•</b> Remove the ability to configure the output depth from the waifu2x menu when using waifu2x-caffe. Apparently textures
+        created with 16-bit depth do not work in Dolphin, and I really don't want this script creating [broken] textures.<br>
+      <b>•</b> When an invalid help option is entered, reset the menu instead of displaying a useless blank box.<br>
+      <b>•</b> Fix logging a missing bar/current path in a subsequent run when running the script on a single texture folder.<br>
+      <b>•</b> Also display the filtering method in the log file [Enabled Options] sections.<br>
+
+
+    <hr><h1>v9.1</h1><hr>
+      <b>•</b> Reworked texture validation to catch Dolphin textures when the Internal Option [Allow All Images] is enabled. This
+        prevents a few issues that I found, especially when working with mipmap textures or mipmap levels (mip1, mip2, etc).<br>
+      <b>•</b> Redesigned the upscaling filters menu and removed a bunch of filters that were probably never used.<br>
+      <b>•</b> Allow JPG images to be upscaled with the various upscaling filters. DDS may come in the future.<br>
+      <b>•</b> Added registry settings (found in the [docs] folder) to open PowerShell scripts with a double click.<br>
+
+    <hr><h1>v9.0</h1><hr>
+      <b>•</b> The option [Allow All Images] is now fully implemented and exposed in the Internal Options. This option will allow
+        almost every function of this script to work on any image including watermarks, OptiPNG, converting to other formats,
+        and applying the various upscaling filters. Error checking/repairing will not work on non-Dolphin textures.<br>
+      <b>•</b> When upscaling with the waifu2x filter, allow forcing the method used for seamless textures.<br>
+      <b>•</b> Allow a quicker exit to the script by pressing [Enter] when nothing is entered at the Main Menu.<br>
+      <b>•</b> More typos fixed and better descriptions in some help options.<br>
+
+    <hr><h1>v8.7</h1><hr>
+      <b>•</b> Simplified all [Status] messages printed to the log file.<br>
+      <b>•</b> Fix a typo in the watermark menu and the waifu2x menu ("begin" not "being").<br>
+      <b>•</b> Report/log counts for textures: that have issues, repaired, copied, optimized with OptiPNG, invalid mipmaps removed,
+        textures with forced mipmaps, removed alpha channels, and textures fixed potentially broken by OptiPNG.<br>
+      <b>•</b> Fix error checking DDS internal vs. external mipmaps for good this time. Not sure if I ever really fixed it, but it
+        should now only check for the type of mipmaps that is selected in the Internal Options setting [DDS Mipmap Type].<br>
+      <b>•</b> Any process that can flag a texture as [OK] will no longer print these textures to the log file if the Internal
+        Option [Hide OK Textures] is set to true: Remove Invalid Mipmaps, Remove Alpha Channel, and Fix OptiPNG Textures.<br>
+      <b>•</b> A secret option 'AllowAllImages' can be set '$true' in the script's header. This does what it says, and allows any
+        non-texture image to pass the script's validation. This is not nearly fully implemented yet, so expect TONS of errors.
+        This option does work to the point that it will successfully generate DDS textures from -any- PNG/JPG/DDS image.<br>
+
+    <hr><h1>v8.6</h1><hr>
+      <b>•</b> Fix all kinds of stuff dealing with Ishiiruka textures that have been broken since v8.1.<br>
+      <b>•</b> Reverted some of the changes from v8.1 dealing with DDS mipmap generation.<br>
+      <b>•</b> Reverted the default setting of [Force New Mipmaps] back to [False] for safety reasons.<br>
+
+    <hr><h1>v8.5</h1><hr>
+      <b>•</b> Fix language decimal issue (commas vs. periods) when applying upscaling filters to textures.<br>
+      <b>•</b> Decrease the crop amount to 95% (from 97%) so there are more pixels to work with on smaller textures.<br>
+      <b>•</b> Limit the montage/crop/filter/crop method to textures equal to or above 24x24. I doubt there are many (if any)
+        seamless textures that are smaller than these dimensions. And the filtering method probably wouldn't help much anyway.<br>
+
+    <hr><h1>v8.4</h1><hr>
+      <b>•</b> Removed all the ugly (In-Place) text from the Advanced Options, and made it more clear that all options do this.<br>
+      <b>•</b> New Advanced Option [Remove Alpha Channel From Non-Transparent Textures] will check textures to see if they contain
+        both an alpha channel and transparent pixels. If an alpha channel is found, and transparent pixels are not, then the
+        alpha channel is removed from the texture. As with all Advanced Options, this is done in-place. This option is most
+        useful with PNG textures, using this script to convert to DDS will already remove the alpha channel if not used.<br>
+      <b>•</b> When applying filters, the montage/crop/filter/crop method will now only take place if an image does not have any
+        transparent pixels. This does not mean alpha channel, a texture can have an alpha channel enabled and still be opaque.<br>
+      <b>•</b> When applying filters, the montage/crop/filter/crop method has been improved so that it crops 97% (from 90%) of the
+        overhang before applying the chosen filter. This should slightly decrease the amount of time it takes to run an image
+        through the desired filter when processing environment textures; or basically any textures without transparency.<br>
+      <b>•</b> Most menus now use [0] to return to the main menu. The letter "B" is still used in the Manual Rescale menu.<br>
+      <b>•</b> Watermark generation and waifu2x menus now require nothing to be entered to proceed (which is faster).<br>
+      <b>•</b> Fix the help description of waifu2x [OpenCL] option. Was a copy/paste job and forgot to update it.<br>
+
+    <hr><h1>v8.3</h1><hr>
+      <b>•</b> Added waifu2x to the list of possible filters to apply when upscaling/filtering textures with Option 7.<br>
+      <b>•</b> The script is compatible with either waifu2x-caffe or waifu2x-cpp. The path can be chosen in the Internal Options.<br>
+      <b>•</b> A new method is applied when filtering textures that preserves the edges of seamless textures. Textures are now tiled
+        9 times, cropped, filtered, then cropped again to preserve the edges of seamless textures. This adds a little bit of time
+        to the overall conversion, which can most likely be improved on in the future. For now it does work on all textures.<br>
+      <b>•</b> The filter that was applied is now appended to the output directory. Example: ~FilteredTextures(3xBRZ)<br>
+      <b>•</b> Fix an error that can pop up when using certain upscaling filters which caused the upscale to fail.<br>
+      <b>•</b> Removed the restriction of applying upscaling filters to only textures with the original dimensions.<br>
+      <b>•</b> Because the above restriction was removed, there was the possibility that this could tool could be misused to create
+        insanely large textures. To protect the users from themselves, textures must be smaller than 4096x4096 and the resulting
+        dimensions must be lower than 8192x8192. If the resulting dimensions are higher, a smaller scaling value is calculated.
+        If a smaller scaling value does not reduce the resulting size below that value, then the texture will be skipped.<br>
+
+    <hr><h1>v8.2</h1><hr>
+      <b>•</b> Fixed DDS mipmap generation and watermark generation [Rename-Item] error on older PowerShell versions.<br>
+      <b>•</b> Fixed some more descriptions when using the help options from the Internal Options menu.<br>
+
+    <hr><h1>v8.1</h1><hr>
+      <b>•</b> The focus of this version was rewriting the texture generation logic. This code was directly translated from the
+        batch version long ago, and hasn't been touched, as the old saying goes: If it's not broken, don't fix it. Although it
+        wasn't broken, it never felt complete. The new system can handle several more cases, all changes below.<br>
+      <b>•</b> DDS textures that are detected as [corrupt] have an additional layer of testing added if Ishiiruka Tool is found.
+      <b>•</b> If a texture passes the test mentioned above, it is recreated as PNG with Ishiiruka Tool, then recreated once more
+        with ImageMagick so it becomes compatible with this script (or whatever image program).<br>
+      <b>•</b> DDS conversions should overall be slightly faster, especially when dealing with mipmap textures. The old slow code
+        path is still taken if mipmap levels are provided. This can be averted with the option [Force New Mipmaps].<br>
+      <b>•</b> The Internal Option [Force New Mipmaps] is now enabled by default, as it forces the faster code path as mentioned
+        above. This option is a special case scenario anyway, as it's only useful to disable it for dynamic mipmaps.<br>
+      <b>•</b> Fix large DDS textures that are generated with ImageMagick to not always generate internal mipmaps.<br>
+      <b>•</b> DDS textures with internal mipmaps are now preserved when converting DDS textures to other formats. If both internal
+        and external mipmaps are supplied, priority is given to the internal mipmaps due to internal dynamic mipmaps.<br>
+      <b>•</b> With these changes comes the small price that the threshold for generating DDS textures with Nvidia Tools has been
+        lowered to images below 4096x4096 (old limit was 8192x4096). Large textures are instead created with ImageMagick.<br>
+      <b>•</b> Removed the [Notice] message that appears when ImageMagick is used to generate DDS textures.<br>
+      <b>•</b> The Advanced Option [Generate New Mipmaps (In-Place)] will now also work on material map textures.<br>
+      <b>•</b> Added more logging events to all Advanced Options so it doesn't leave blank areas in the log file/console.<br>
+      <b>•</b> Changed the awful order of some of the Advanced Options to what I think is the most useful to the least useful.<br>
+      <b>•</b> Added all the most recent options to the list that the Log file displays in the header titled [Enabled Options].<br>
+
+    <hr><h1>v8.0</h1><hr>
+      <b>•</b> It is required to update to Ishiiruka Tool v0.9 to handle all new features when working with material map textures.<br>
+      <b>•</b> A new Internal Option [Material Map Format] controls how to handle material map textures. If set to [Ishiiruka], it
+        will generate material maps normally for Ishiiruka. If it is set to [Dolphin], the textures will not be created with
+        material maps, but any DDS color textures created with Ishiiruka Tool will be converted to a Dolphin compatible format.<br>
+      <b>•</b> Add support for xBRZ ScalerTest by Zenju. It can be selected in the option [Apply Upscaling Filter to Base Textures].<br>
+      <b>•</b> The path to the ScalerTest can be set in the Internal Options, or when attempting to use the xBRZ filter.<br>
+      <b>•</b> Implemented possibly the fastest possible method for counting the correct number of textures before the loop starts.<br>
+      <b>•</b> Generating a watermark on DDS Ishiiruka color textures is now possible if Ishiiruka Tool v0.9 is found. If it is not
+        found, then the old method of generating the textures as a black image with the watermark will be used instead.<br>
+      <b>•</b> Completely skip error checking DDS textures for missing internal mipmaps if [DDS Mipmap Type] is set to [External].<br>
+
+    <hr><h1>v7.4</h1><hr>
+      <b>•</b> Allow importing Internal Options from other versions of the script so they don't have to be changed every version.<br>
+      <b>•</b> When error checking, do not check for missing external mipmaps if [DDS Mipmap Type] is set to [Internal].<br>
+      <b>•</b> DDS textures that are missing external mipmaps will now display [External Mipmaps Missing] to avoid confusion.<br>
+      <b>•</b> When selecting the Temp Folder in the Internal Options, force the final path to include [\CTT-PS_Temp]. I didn't
+        realize how dangerous setting this folder could be. In its old state, it could wipe out an entire directory!<br>
+      <b>•</b> Add [Notice] and [Message] texts when generating Mipmaps in-place using the Advanced Option.<br>
+      <b>•</b> Updated any remaining built-in help descriptions that needed updating based on any recent changes.<br>
+
+    <hr><h1>v7.3</h1><hr>
+      <b>•</b> Fix an issue that can happen when running OptiPNG on textures (Option 6) that already exist in the output path.<br>
+      <b>•</b> In the rare situation a watermark is to be generated on a DDS texture created with Ishiiruka Tool, instead create a
+        black texture. This is because DDS textures created with Ishiiruka Tool are not compatible with ImageMagick and fail.
+        This should be okay because watermarked textures should only be used to identify where the texture shows up in-game.<br>
+      <b>•</b> The title bar progress will now display the current operation that is taking place on the current texture.<br>
+      <b>•</b> Calculate the title bar completion percentage in a way that is far less idiotic than the way I was originally.<br>
+      <b>•</b> Improve the title bar accuracy to 100%, meaning it will only count textures that have actions applied to them in the
+        main loop. Before the value was also counting mipmap levels. Although they get processed in the main loop, they do not
+        have any actions applied to them individually, so now a texture and all mipmap levels count as a single texture.<br>
+
+    <hr><h1>v7.2</h1><hr>
+      <b>•</b> Fix a stupid bug with the loop to count files missing the base path.<br>
+
+    <hr><h1>v7.1</h1><hr>
+      <b>•</b> Fix a long standing issue that could allow random files to pass texture validation (such as PSD and XCF files).
+      <b>•</b> The title bar will now display the progress of the current task in the form of: current/total (complete%). It should<br>
+        be noted that this adds slightly more processing time for the loop to initialize. The time it takes depends solely on
+        the number of files in the pack (usually less than a second but can take maybe up to 4-5 seconds). Also, the number of
+        files displayed is an approximate number, as it counts all PNG/DDS/JPG images whether they are a texture file or not.
+        The reason is performance, validating every file individually would add much more time to the initialization. Although
+        it is an approximate number (as it counts non-texture images), it is 100% accurate in how many files are processed.<br>
+
+    <hr><h1>v7.0</h1><hr>
+      <b>•</b> Add support for using ImageMagick v7. Figured I'd bump the script to this version to match it. :P<br>
+      <b>•</b> The title bar on the PowerShell console window will now also display the installed version of ImageMagick.<br>
+      <b>•</b> Found one more array initialization that I missed using [New-Object] for when doing OptiPNG related tasks.<br>
+      <b>•</b> Fix OptiPNG descriptions to show the proper default number for tests (which is now 3 and not 5).<br>
+      <b>•</b> When creating material maps from bump/spec/nrm textures using the Advanced Option, only remove the files if the
+        textures were created. This probably wasn't an issue (as the textures should always be created), but just to be safe.<br>
+      <b>•</b> Fixed a bug when selecting the ImageMagick folder when ImageMagick is not found.<br>
+      <b>•</b> Also allow changing the ImageMagick path via the script by entering ?? at the main menu.<br>
+
+    <hr><h1>v6.0</h1><hr>
+      <b>•</b> A new option has been added to the Main Menu: [Apply Upscaling Filter to Base Textures]. This option allows
+        upscaling and applying a filter to textures that are dumped by Dolphin. This option does not work on textures with
+        a resolution higher than the dimensions of the original texture. It's not a replacement for actual retexturing, as
+        the results are not fantastic, and it should only be used in special case circumstances.<br>
+      <b>•</b> Force the console window size for PowerShell v2 to the same size used in PowerShell v3-5.<br>
+      <b>•</b> The console window can now remember up to 20,000 lines (up from the default 2,000 lines).<br>
+      <b>•</b> Added a few more cases of the work-around for the [Open Folder] dialog not working with PowerShell v2.<br>
+      <b>•</b> Modified the [ManualRescale] menu. The new method should be much friendlier than the old one.<br>
+      <b>•</b> Reduced the base number of OptiPNG tests to 3. Defaulting to 5 tests just adds unnecessary time.<br>
+      <b>•</b> When a corrupted or non-texture file is copied, the console will now display the path it originated in.<br>
+      <b>•</b> Removed any remaining compatibility with ImageMagick v7 betas. When v7 is released, I'll support it once again.<br>
+      <b>•</b> Added further accessibility for obtaining/selecting ImageMagick v6 with the menu (when v6 is not found).<br>
+      <b>•</b> Fix recent changes that caused instances of [thumbs.db] to be copied as non-texture files.<br>
+      <b>•</b> The [Advanced Functions] menu now has a built-in help description when entering [8?] at the main menu.<br>
+      <b>•</b> Refactored a huge chunk of the menu code which was almost half of the script. This was a long time coming, it was
+        a poorly coded mess that I just kept adding onto. The menu rewrite way back in v2.5 was a failure that couldn't be
+        maintained. This rewrite I was able to reduce the script by over 500 lines. There may be new bugs from this!<br>
+      <b>•</b> Recoded the way arrays are initialized using New-Object instead of a loop. This method is supposed to be much
+        faster than using a loop, so it might reduce a little bit of overhead when working with 100s-1000s of textures.<br>
+
+    <hr><h1>v5.5</h1><hr>
+      <b>•</b> The number of tests that OptiPNG runs is now once again configurable in the Internal Options.<br>
+      <b>•</b> OptiPNG will no longer run on material maps (nrm) or the parent texture (just to be safe).<br>
+      <b>•</b> Fixed all cases that dealt with paths. Not sure how I missed so many potential issues until now.<br>
+      <b>•</b> A prompt will now appear to select Ishiiruka Tool if not found when using the Advanced Option [Generate Material Maps].<br>
+      <b>•</b> When attempting to convert to JPG, textures with a material map are now skipped since they will most likely fail.<br>
+      <b>•</b> Modified more cases of [Notice] messages to now display in the color [Magenta].<br>
+
+    <hr><h1>v5.4</h1><hr>
+      <b>•</b> This is what happens when I really just want to get something done and rush things. Fixed even more instances of
+        commands needing [-LiteralPath], this time when deleting files with [Remove-Item].<br>
+
+    <hr><h1>v5.3</h1><hr>
+      <b>•</b> Fixed a long oversight in the script with instances of [Get-ChildItem] that needed [-LiteralPath]. This could have
+        affected and prevented mipmap generation and textures created with OptiPNG. There may have been other places as well.<br>
+
+    <hr><h1>v5.2</h1><hr>
+      <b>•</b> When OptiPNG creates a texture with any color channel that is less than 8bpp, the texture is skipped.<br>
+      <b>•</b> The number of tests performed by OptiPNG is now fixed to 5. This is no longer configurable, and the menu was removed.<br>
+      <b>•</b> Generating textures in place with OptiPNG has been moved to the Advanced Functions menu.<br>
+      <b>•</b> New option in Advanced Functions to repair textures potentially broken by OptiPNG using older versions of the script.<br>
+
+    <hr><h1>v5.1</h1><hr>
+      <b>•</b> Work-around [Open] dialog issues with PS v2 that freezes the script when selecting paths to Ishiiruka Tool or OptiPNG.<br>
+      <b>•</b> Also work-around [Open Folder] dialog issue with PS v2 by allowing the user to enter/paste in a new path.<br>
+      <b>•</b> Removed the ability to generate material maps in-place using Option 4. Functionality moved to [Advanced Functions].<br>
+      <b>•</b> The Advanced Function to generate mipmaps will not work with Ishiiruka textures, so they are now skipped.<br>
+      <b>•</b> Added additional error checking to test if textures/material maps are successfully created with Ishiiruka Tool.<br>
+      <b>•</b> Updated some of the built-in help descriptions.<br>
+
+    <hr><h1>v5.0</h1><hr>
+      <b>•</b> The script now requires a minimum of Ishiiruka Tool v0.8 for working with material textures.<br>
+      <b>•</b> Finally converting all instances of material maps should now work using Ishiiruka Tool.<br>
+      <b>•</b> Generated mipmap levels will now be even between material maps and color textures.<br>
+      <b>•</b> External mipmaps will no longer be created for DDS textures generated with Ishiiruka Tool.<br>
+      <b>•</b> DDS color textures generated with Ishiiruka Tool will now work with this script if the material (nrm) is supplied.<br>
+      <b>•</b> When textures are created with Ishiiruka Tool, the script will now report the format as 'Ishiiruka' instead of DXT1/DXT5.<br>
+      <b>•</b> Fixed the case of running scan textures > repair; bump/spec/nrm textures will now always be created as a material map.<br>
+      <b>•</b> Added additional console messages for when material maps are created or copied, and when creating Watermarks on textures.<br>
+      <b>•</b> Material/color textures must once again be in the same format (v4.1 allowed different formats). This is technically
+        a regression, and [might] be fixed in the future. It felt like too much work to reimplement in this version.<br>
+
+    <hr><h1>v4.3</h1><hr>
+      <b>•</b> Nothing worth mentioning.<br>
+
+    <hr><h1>v4.2</h1><hr>
+      <b>•</b> Added a condition to copy a material map rather than generate it if the output would be the same.<br>
+      <b>•</b> Small bug fixes.<br>
+
+    <hr><h1>v4.1</h1><hr>
+      <b>•</b> Allow working with combined material maps that have a different extension than the color texture.<br>
+      <b>•</b> Fix a bug that generated an extra material if the texture was not a mipmap texture.<br>
+
+    <hr><h1>v4.0</h1><hr>
+      <b>•</b> Added full support for rescaling/converting already existing PNG material maps using Ishiiruka Tool.<br>
+      <b>•</b> Fixed an issue with decimals when doing division. I recently learned some countries use commas instead of periods.<br>
+      <b>•</b> Scrapped the old ReadMe, typed up a brand new one with less colors and hopefully more informative.<br>
+      <b>•</b> Completely removed the internal options for [Alternate Log Format] and [Incremental Logs].<br>
+      <b>•</b> Tons of code changes once again, please report any bugs that may be a result of this.<br>
+
+    <hr><h1>v3.9</h1><hr>
+        I didn't want to release this version until Tino added some more options to Ishiiruka Tool, but v3.2 was creating bad
+        material maps when converting to DDS. Plus I didn't want all these changes to sit in purgatory while I wait.<br><br>
+
+      <b>•</b> Added support for generating material maps with Ishiiruka Tool from (bump), (spec), and (nrm) textures. It is important
+        to note that material map (nrm) textures that have already been generated with Ishiiruka Tool are NOT converted when using
+        the options to convert a pack to another format! For now these textures are skipped until Tino updates his tool to allow
+        converting PNG material maps to DDS, and possibly the option to rescale material maps. When Ishiiruka Tool supports these
+        options, I will enable this functionality in the script and update it to v4.0.<br>
+      <b>•</b> New Advanced Option [Generate New Mipmaps] which allows generating new Mipmaps directly within the texture pack.<br>
+      <b>•</b> Categorized the options in the Internal Options menu to make them slightly easier to understand their purpose.<br>
+      <b>•</b> The folder when rescaling textures now contains (PNG), (DDS), or (JPG) if a conversion method was forced.<br>
+      <b>•</b> Removed the Internal Options for alternate log format and incremental logs. I don't think anyone used these options,
+        and the default methods feel far superior. These options are still hidden in the script header if someone really wants them.<br>
+      <b>•</b> Selecting paths for ImageMagick, DDS Utilities, OptiPNG, Ishiiruka Tool, or a Temp Folder is now done through a GUI.<br>
+      <b>•</b> Entered paths for OptiPNG and Ishiiruka Tool must contain the exe file (if editing the script instead of Internal Options).<br>
+      <b>•</b> Fixed setting the wrong paths to [stitch] and [detach] when selecting a new path for DDS Utilities (if it was not found).<br>
+      <b>•</b> Too many other small bug fixes and code/cosmetic changes to make a list of.<br>
+
+    <hr><h1>v3.2</h1><hr>
+      <b>•</b> Combined Options 1-4 into a single option. A sub-menu will now appear that allows repairing/copying bad textures.<br>
+      <b>•</b> Added a new menu called [Advanced Options] that will contain options that modify the texture pack directly.<br>
+      <b>•</b> Advanced Option [Remove Invalid Mipmaps] will find and delete mipmaps that do not belong to actual mipmap textures.<br>
+      <b>•</b> Texture validation will no longer pass lower mipmap levels that do not belong to actual mipmap [m] textures.<br>
+      <b>•</b> Preliminary work on adding support for Tino's Ishiiruka Tool. The tool does not yet support command line input,
+        so it is disabled for now until Tino adds support for CLI.<br>
+
+    <hr><h1>v3.1</h1><hr>
+      <b>•</b> Fixed a bad bug with texture validation that invalidated paletted textures (possibly others). This means that packs
+        that were converted to DDS from CTT-PS v2.5-v3.0 may be missing a few textures! Please regenerate your packs!<br>
+
+    <hr><h1>v3.0</h1><hr>
+      <b>•</b> Added support for handling Ishiiruka normal maps: meaning the already combined 'normal', 'bump' and 'spec'
+        texture that can be created using the tool found on post 3 of the Ishiiruka board.<br>
+      <b>•</b> Normal maps are handled like standard textures, meaning all error checking and mipmap generation also applies to them.<br>
+      <b>•</b> Detecting [Dolphin Duplicates] was refined to check for an actual integer so it will not detect normal maps.<br>
+      <b>•</b> When any mipmap textures are copied during error checks, the script will now also copy existing mipmap levels.<br>
+
+    <hr><h1>v2.5</h1><hr>
+      <b>•</b> The other half of the script was rewritten in this version (menu code), hence the increase to v2.5.<br>
+      <b>•</b> Improved the accuracy of detecting the proper scale to use (width vs. height) when auto-repairing a texture.<br>
+      <b>•</b> Fixed a (bug?) when setting ScaleFixThreshold. I'm honestly not sure how it was still working at all.<br>
+      <b>•</b> Active menu descriptions are now displayed in yellow text (which helps center attention on the active menu).<br>
+      <b>•</b> If the path to OptiPNG is not set and Option 7 is selected, the menu to choose a new path will now pop up here.<br>
+      <b>•</b> If DDS Utilities are not found when selecting DDS, allow going back to Main Menu rather than close script.<br>
+
+    <hr><h1>v2.0</h1><hr>
+      <b>•</b> About half of the script was rewritten in this version (main functions code), hence the increase to v2.0.<br>
+      <b>•</b> Issue [NotHD] is now detected if either dimension falls below the original (instead of needing both).<br>
+      <b>•</b> Fixed console reporting the number of missing DDS Internal Mipmaps when error checking DDS mipmap textures.<br>
+      <b>•</b> The folder when converting textures to another format now contains (PNG), (DDS), or (JPG) instead of the file extension.<br>
+      <b>•</b> The same change as above was applied to the console and log files (will show (PNG) instead of (.png) for example).<br>
+      <b>•</b> Textures created with a watermark will now be forced into PNG format to avoid text corruption in DDS files.<br>
+      <b>•</b> Fixed converting packs into JPG format which I accidentally broke in v1.7.<br>
+
+    <hr><h1>v1.7</h1><hr>
+      <b>•</b> Slightly reduced the sharpening strength for some cases when textures are rescaled when repairing or converting.<br>
+      <b>•</b> Hide an error message that pops up if ImageMagick or DDS Utilities are not found in the Windows registry.<br>
+      <b>•</b> Hopefully fixed all remaining typos in the help sections of the script.<br>
+      <b>•</b> Reworked mipmap generation for DDS textures. Before, the original texture dimensions were used when calculating the number
+        of levels and mipmap dimensions. Now, DDS mipmap dimensions are calculated using a multiple of four of the current dimensions.
+        This really only affects textures with odd scaling values (non-int-scale/non-mult-4), meaning, textures with [bad] dimensions.<br>
+        <br>
+        For example, a 768x768 [m] texture now gets a proper [2x2] mipmap and not two [1x1] mipmaps...<br>
+        Before: 768x768, 384x384, 192x192, 96x96, 48x48, 24x24, 12x12, 8x8, 4x4, 1x1, 1x1<br>
+        After : 768x768, 384x384, 192x192, 96x96, 48x48, 24x24, 12x12, 8x8, 4x4, 2x2, 1x1<br>
+        <br>
+        This also improves calculations for textures with [bad] dimensions. For example, a 578x578 [m] texture...<br>
+        Before: 580x580, 292x292, 148x148, 72x72, 36x36, 20x20, 12x12, 4x4, 2x2, 1x1<br>
+        After : 580x580, 292x292, 148x148, 76x76, 40x40, 20x20, 12x12, 8x8, 4x4, 2x2, 1x1<br>
+        <br>
+        In the example above, descending layers have [better] dimensions and an additional level is created which fills the rather large
+        gap between 12x12 and 4x4. Because of the nature of DDS, it is impossible to always have mipmaps that are a perfect halve of the
+        previous level. The new method should create a better transition between mipmap dimensions for DDS textures in nearly all cases.<br>
+
+    <hr><h1>v1.6</h1><hr>
+      <b>•</b> Maybe fixed issues creating DDS textures with internal mipmaps. Not sure if it was broken, but it looked like it.<br>
+      <b>•</b> Fixed the error message that should appear when entering invalid values for Option 5 (rescale textures).<br>
+      <b>•</b> Fixed a few issues when running Option 5 with the option [ManualRescale] enabled.<br>
+      <b>•</b> Much better description when checking the help for the [DDS Mipmap Type] internal option.<br>
+      <b>•</b> Tons more code cleanup, optimizations, and refactoring. Please notify me if any new bugs popped up from this.<br>
+
+    <hr><h1>v1.5</h1><hr>
+      <b>•</b> Fixed NotHD texture detection to detect lower than 1x1 scales.<br>
+      <b>•</b> Fixed a bunch of potential issues involving repair thresholds (ScaleFix/AspectFix).<br>
+      <b>•</b> Miscellaneous code cleanup.<br>
+
+    <hr><h1>v1.4</h1><hr>
+      <b>•</b> Fixed an issue that could prevent a texture from being created if it matched certain conditions.<br>
+      <b>•</b> Fixed the explanation of the the [DDS Mipmap Type] option to better explain its new functionality.<br>
+
+    <hr><h1>v1.3</h1><hr>
+      <b>•</b> Removed the 'DDS Mipmap Menu' when converting textures to DDS using option 5 or 6 from the main menu. <br>
+      <b>•</b> All DDS Mipmap handling (repair/convert) is now handled with the Internal Option [DDS Mipmap Type].<br>
+      <b>•</b> New Internal Option [Allow NotHD Textures] to disable checks for textures with original dimensions.<br>
+      <b>•</b> Fixed [Copy Non-Texture Files]. This broke in beta when I added the converted extension to the folder name.<br>
+      <b>•</b> Added help options to the watermark menu to better describe each option.<br>
+
+    <hr><h1>v1.2</h1><hr>
+      <b>•</b> Added a special case to default [0] when no input is entered when configuring watermark [Text Length].<br>
+      <b>•</b> Fixed a silly mistake when checking the width for watermarks (checked for [<= 256] instead of [< 256]).
+        Everything still worked as intended however, so there should be no change in behavior.<br>
+      <b>•</b> Improvements to several help descriptions when entering a ? after an input value.<br>
+      <b>•</b> Minor miscellaneous code cleanup.<br>
+
+    <hr><h1>v1.1</h1><hr>
+      <b>•</b> A new option has been added to add watermarks to textures using part or all of the texture's name.
+        Credits go to [uncleiroh] for the idea and [MeleeHD] for bringing it to my attention.<br>
+
+    <hr><h1>v1.0</h1><hr>
+      <b>•</b> Initial release. All features included from the now deprecated Custom Texture Tool v5.0 Batch version.<br>
+
+    </div>
+  </body>
+</html>
